@@ -1,0 +1,43 @@
+Модели
+- Пользователь Users
+    id 
+    email
+    username
+    first_name
+    last_name
+    password
+    is_subscribed
+    avatar
+    recipes_count
+- Теги Tags
+    id
+    name
+    slug
+- Рецепты Recipes
+    id
+    page
+    limit
+    *is_favorited
+    *is_in_shopping_cart
+    *author
+    *tags
+    *ingredients
+    image
+    name
+    text
+    cooking_time
+- Список покупок Shopping_cart
+- Избранное Favorite
+    *id_Recipes
+- Подписки Subscriptions
+    id_Users
+    recipes_limit
+- Ингредиенты Ingredients
+    id
+    amount
+    measurement_unit
+
+
+- Права
+- Фильтры
+- Пагинация
