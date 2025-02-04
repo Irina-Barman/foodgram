@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from .validators import validate_username_not_me
 from foodgram_project.settings import (
     MAX_USERNAME_LENGTH,
+    MAX_NAME_LENGTH,
     MAX_EMAIL_LENGTH,
     MAX_ROLE_LENGTH,
 )
@@ -35,10 +36,10 @@ class CustomUser(AbstractUser):
         unique=True,
     )
     first_name = models.CharField(
-        max_length=MAX_USERNAME_LENGTH, verbose_name=_("Имя"), blank=True
+        max_length=MAX_NAME_LENGTH, verbose_name=_("Имя"), blank=True
     )
     last_name = models.CharField(
-        max_length=MAX_USERNAME_LENGTH, verbose_name=_("Фамилия"), blank=True
+        max_length=MAX_NAME_LENGTH, verbose_name=_("Фамилия"), blank=True
     )
 
     role = models.CharField(
