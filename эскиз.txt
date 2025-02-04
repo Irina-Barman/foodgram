@@ -16,7 +16,7 @@
 - Рецепты Recipes
     id
     page
-    limit
+        
     *is_favorited
     *is_in_shopping_cart
     *author
