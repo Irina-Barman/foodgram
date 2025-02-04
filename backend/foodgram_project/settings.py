@@ -129,10 +129,8 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# Максимальная длина email
-EMAIL_MAX_LENGTH = 254
-
 # Константы для максимальной длины полей
 MAX_USERNAME_LENGTH = 150
 MAX_EMAIL_LENGTH = 254
 MAX_ROLE_LENGTH = 20
+MAX_NAME_LENGTH = 200
