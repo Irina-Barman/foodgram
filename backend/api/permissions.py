@@ -1,24 +1,52 @@
-from rest_framework.permissions import SAFE_METHODS, BasePermission
+from rest_framework import permissions
 
 
-class IsAdminOrReadOnly(BasePermission):
+class IsAdmin(permissions.BasePermission):
     """
-    Разрешение, которое позволяет только администраторам
-    выполнять любые запросы (POST, PUT, DELETE),а остальным (GET).
+    Разрешение для администраторов и суперпользователей.
+    Полный доступ только администраторам и суперпользователям Django.
     """
-
     def has_permission(self, request, view):
-        return request.method in SAFE_METHODS or (
-            request.user and request.user.is_staff
+        return (
+            request.user.is_authenticated
+            and (request.user.is_admin or request.user.is_superuser)
         )
 
 
-class IsOwnerOrReadOnly(BasePermission):
+class IsAdminOrReadOnly(permissions.BasePermission):
     """
-    Разрешение, которое позволяет владельцам объекта выполнять любые операции
-    (POST, PUT, DELETE),
-    а все остальные пользователи могут только выполнять (GET).
+    Разрешение для администраторов или только для чтения.
+    Изменение контента доступно только администраторам.
+    Чтение доступно всем.
     """
+    def has_permission(self, request, view):
+        return (
+            request.method in permissions.SAFE_METHODS
+            or (
+                request.user.is_authenticated
+                and request.user.is_admin
+            )
+        )
+
+
+class IsAuthorOrAdminOrReadOnly(permissions.BasePermission):
+    """
+    Пользовательское разрешение для проверки прав доступа.
+
+    Разрешает:
+    - Чтение всем пользователям
+    - Создание аутентифицированным пользователям
+    - Изменение и удаление авторам контента и администраторам
+    """
+    def has_permission(self, request, view):
+        return (
+            request.method in permissions.SAFE_METHODS
+            or request.user.is_authenticated
+        )
 
     def has_object_permission(self, request, view, obj):
-        return request.method in SAFE_METHODS or obj.author == request.user
+        return (
+            request.method in permissions.SAFE_METHODS
+            or obj.author == request.user
+            or request.user.is_admin
+        )
