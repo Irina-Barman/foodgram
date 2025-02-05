@@ -91,7 +91,7 @@ class Recipe(models.Model):
 
 
 # Связующая модель ингридиенты для рецепта
-class RecipeIngredients(models.Model):
+class RecipeIngredient(models.Model):
     id = models.AutoField(primary_key=True)
     ingredients = models.ForeignKey(
         Ingredient,

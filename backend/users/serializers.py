@@ -12,7 +12,6 @@ class SignUpSerializer(serializers.Serializer):
     Сериализатор для регистрации пользователей.
     Проверяет валидность username и email, обеспечивает уникальность данных.
     """
-
     username = serializers.CharField(
         max_length=MAX_USERNAME_LENGTH,
         required=True,
@@ -47,7 +46,26 @@ class SignUpSerializer(serializers.Serializer):
         return data
 
 
+class TokenSerializer(serializers.Serializer):
+    """
+    Сериализатор для получения JWT-токена.
+    Проверяет валидность username и кода подтверждения.
+    """
+    username = serializers.CharField(
+        max_length=MAX_USERNAME_LENGTH,
+        required=True,
+        validators=[
+            UnicodeUsernameValidator(),
+            validate_username_not_me,
+        ],
+    )
+    confirmation_code = serializers.CharField(required=True)
+
+# ниже в api перенести
+
+
 class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор пользователя"""
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -68,24 +86,31 @@ class UserSerializer(serializers.ModelSerializer):
         return False
 
 
-class TokenSerializer(serializers.Serializer):
-    """
-    Сериализатор для получения JWT-токена.
-
-    Проверяет валидность username и кода подтверждения.
-    """
-
-    username = serializers.CharField(
-        max_length=MAX_USERNAME_LENGTH,
-        required=True,
-        validators=[
-            UnicodeUsernameValidator(),
-            validate_username_not_me,
-        ],
-    )
-    confirmation_code = serializers.CharField(required=True)
-
-
 class SubscriptionSerializer(serializers.ModelSerializer):
-    """Сериализатор подписок"""
+    """Сериализатор подписок."""
+    pass
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор рецептов."""
+    pass
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор ингридиентов."""
+    pass
+
+
+class RecipeIngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор ингридиентов в рецепте."""
+    pass
+
+
+class TagSerializer(serializers.ModelSerializer):
+    """Сериализатор тэгов."""
+    pass
+
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    """Сериализатор списка покупок."""
     pass
