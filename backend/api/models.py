@@ -163,7 +163,7 @@ class Favorite(models.Model):
 
 
 # Модель подписки
-class Subscriptions(models.Model):
+class Subscription(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
         CustomUser,
