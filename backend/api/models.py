@@ -1,5 +1,6 @@
+from django.db.models import F, Q
 from django.db import models
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from foodgram_project.settings import (
     MAX_RECIPES_NAME_LENGTH,
     MAX_INGREDIENTS_NAME_LENGTH,
@@ -7,6 +8,7 @@ from foodgram_project.settings import (
     MAX_MEASUREMENT_UNIT_LENGTH,
     MIN_TIME,
 )
+from users.models import CustomUser
 
 
 # Модель тег
@@ -29,7 +31,7 @@ class Tag(models.Model):
 
 
 # Модель Ингредиенты
-class Ingredients(models.Model):
+class Ingredient(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(
         "Название ингридиента", max_length=MAX_INGREDIENTS_NAME_LENGTH
@@ -53,13 +55,13 @@ class Ingredients(models.Model):
 
 
 # Модель рецепты
-class Recipes(models.Model):
+class Recipe(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(
         "Название рецепта", max_length=MAX_RECIPES_NAME_LENGTH
     )
     ingredients = models.ManyToManyField(
-        Ingredients,
+        Ingredient,
         through="RecipeIngredients",
         verbose_name="Ингредиенты",
         related_name="recipes",
@@ -74,50 +76,121 @@ class Recipes(models.Model):
         ],
     )
     text = models.TextField("Описание рецепта")
-    image = models.ImageField(
-        "Ссылка на изображение", upload_to=""  # указать!!!
-    )
+    image = models.ImageField("Изображение")
     author = models.ForeignKey(
-        "CustomUser ",
+        CustomUser,
         on_delete=models.CASCADE,
         verbose_name="Автор",
         related_name="recipes",
     )
     pub_date = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(
-        "Tag",
+        Tag,
         verbose_name="Теги",
     )
 
 
 # Связующая модель ингридиенты для рецепта
 class RecipeIngredients(models.Model):
-    # id = models.AutoField(primary_key=True)
-    # ingredients =
-    # recipes =
-    # amount =
-    pass
+    id = models.AutoField(primary_key=True)
+    ingredients = models.ForeignKey(
+        Ingredient,
+        on_delete=models.CASCADE,
+    )
+    recipes = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+    )
+    amount = models.PositiveIntegerField(
+        "Количество",
+        validators=[
+            RegexValidator(r"^[0-9]+$", "Значение должно быть целым числом")
+        ],
+    )
+
+    class Meta:
+        verbose_name = "Ингредиент"
+        verbose_name_plural = "Ингредиенты"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["recipes", "ingredients"],
+                name="unique_ingredients_recipes",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.recipes.name}:{self.ingredients.name}"
 
 
 # Модель список покупок
 class Shopping_cart(models.Model):
-    # id = models.AutoField(primary_key=True)
-    # user =
-    # recipes =
-    pass
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    recipes = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = "Список покупок"
+        verbose_name_plural = "Списки покупок"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "recipes"], name="unique_recipes_list"
+            )
+        ]
+
+    def __str__(self):
+        return f"Список покупок пользователя {self.user.username}"
 
 
 # Модель избранное
 class Favorite(models.Model):
-    # id = models.AutoField(primary_key=True)
-    # user =
-    # recipes =
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    recipes = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = "Список избранного"
+        verbose_name_plural = "Списки избранного"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "recipes"], name="unique_recipes_favorites"
+            )
+        ]
+
+    def __str__(self):
+        return f"Список избранных рецептов {self.user.username}"
+
     pass
 
 
 # Модель подписки
 class Subscriptions(models.Model):
-    # id = models.AutoField(primary_key=True)
-    # user =
-    # author =
-    pass
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(
+        CustomUser,
+        verbose_name="Подписчик",
+        on_delete=models.CASCADE,
+        related_name="follower",
+    )
+    author = models.ForeignKey(
+        CustomUser,
+        verbose_name="Автор рецепта",
+        on_delete=models.CASCADE,
+        related_name="following",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "author"],
+                name="Вы уже подписаны на данного автора",
+            ),
+            models.CheckConstraint(
+                check=~Q(user=F("author")), name="Нельзя подписаться на себя"
+            ),
+        ]
+        ordering = ["-id"]
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+
+        def __str__(self):
+            return f"{self.user} подписался на {self.author}"
