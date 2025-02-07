@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'djoser',
     'api.apps.CatsConfig',
+    'drf_extra_fields',
 ]
 
 MIDDLEWARE = [
@@ -141,3 +142,4 @@ MAX_TAG_LENGTH = 32
 MAX_MEASUREMENT_UNIT_LENGTH = 64
 MIN_TIME = 1
 MIN_INGREDIENTS = 1
+PAGE_SIZE = 6

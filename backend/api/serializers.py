@@ -58,20 +58,6 @@ class SignUpSerializer(serializers.Serializer):
         return data
 
 
-class TokenSerializer(serializers.Serializer):
-    """Сериализатор для получения JWT-токена."""
-
-    username = serializers.CharField(
-        max_length=settings.MAX_USERNAME_LENGTH,
-        required=True,
-        validators=[
-            UnicodeUsernameValidator(),
-            validate_username_not_me,
-        ],
-    )
-    confirmation_code = serializers.CharField(required=True)
-
-
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор пользователя."""
 
