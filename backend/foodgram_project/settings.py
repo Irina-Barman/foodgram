@@ -128,8 +128,10 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+AUTH_USER_MODEL = 'backend.users.CustomUser'
 
-# Константы для максимальной длины полей
+
+# Константы
 MAX_USERNAME_LENGTH = 150
 MAX_NAME_LENGTH = 150
 MAX_EMAIL_LENGTH = 254
@@ -137,6 +139,5 @@ MAX_RECIPES_NAME_LENGTH = 256
 MAX_INGREDIENTS_NAME_LENGTH = 128
 MAX_TAG_LENGTH = 32
 MAX_MEASUREMENT_UNIT_LENGTH = 64
-# Константы
 MIN_TIME = 1
 MIN_INGREDIENTS = 1

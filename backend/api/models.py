@@ -1,54 +1,16 @@
 from django.conf import settings
-from django.contrib.auth.models import AbstractUser
-from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.contrib.auth import get_user_model
+from drf_extra_fields.fields import Base64ImageField
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
-from users.validators import validate_username_not_me
 
-
-class CustomUser(AbstractUser):
-    """Кастомный класс User."""
-    id = models.AutoField(primary_key=True)
-    username = models.CharField(
-        max_length=settings.MAX_USERNAME_LENGTH,
-        verbose_name="Имя пользователя",
-        unique=True,
-        validators=[
-            UnicodeUsernameValidator(),
-            validate_username_not_me,
-        ],
-    )
-    email = models.EmailField(
-        max_length=settings.MAX_EMAIL_LENGTH,
-        verbose_name="Email",
-        unique=True,
-    )
-    first_name = models.CharField(
-        max_length=settings.MAX_NAME_LENGTH, verbose_name="Имя", blank=True
-    )
-    last_name = models.CharField(
-        max_length=settings.MAX_NAME_LENGTH, verbose_name="Фамилия", blank=True
-    )
-
-    class Meta:
-        verbose_name = "Пользователь"
-        verbose_name_plural = "Пользователи"
-        ordering = ("id",)
-        constraints = [
-            models.UniqueConstraint(
-                fields=["username", "email"],
-                name="unique_username_email_constraint",
-            )
-        ]
-
-    @property
-    def is_admin(self):
-        return self.is_superuser or self.is_admin
+User = get_user_model()
 
 
 class Tag(models.Model):
     """Модель тег."""
+
     id = models.AutoField(primary_key=True)
     name = models.CharField(
         "Название тега", max_length=settings.MAX_TAG_LENGTH, unique=True
@@ -68,6 +30,7 @@ class Tag(models.Model):
 
 class Ingredient(models.Model):
     """Модель Ингредиенты."""
+
     id = models.AutoField(primary_key=True)
     name = models.CharField(
         "Название ингридиента", max_length=settings.MAX_INGREDIENTS_NAME_LENGTH
@@ -91,14 +54,14 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
-    """Модель рецепты."""
+    """Модель рецепта."""
 
     id = models.AutoField(primary_key=True)
     name = models.CharField(
         "Название рецепта", max_length=settings.MAX_RECIPE_NAME_LENGTH
     )
     ingredients = models.ManyToManyField(
-        Ingredient,
+        'Ingredient',
         through="RecipeIngredient",
         verbose_name="Ингредиенты",
         related_name="recipes",
@@ -108,23 +71,34 @@ class Recipe(models.Model):
         validators=[
             MinValueValidator(
                 settings.MIN_TIME,
-                f"Время приготовления не может быть меньше {settings.MIN_TIME} минут",
+                message=(
+                    f"Время приготовления не может быть "
+                    f"меньше {settings.MIN_TIME} минут"
+                )
             ),
         ],
     )
     text = models.TextField("Описание рецепта")
-    image = models.ImageField("Изображение")
+    image = Base64ImageField()
     author = models.ForeignKey(
-        CustomUser,
+        'User ',
         on_delete=models.CASCADE,
         verbose_name="Автор",
         related_name="recipes",
     )
     pub_date = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(
-        Tag,
+        'Tag',
         verbose_name="Теги",
     )
+
+    class Meta:
+        verbose_name = "Рецепт"
+        verbose_name_plural = "Рецепты"
+        ordering = ['-pub_date']  # Сортировка от новых к старым
+
+    def __str__(self):
+        return self.name
 
 
 class RecipeIngredient(models.Model):
@@ -164,7 +138,7 @@ class ShoppingCart(models.Model):
     """Модель список покупок."""
 
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
 
     class Meta:
@@ -184,7 +158,7 @@ class Favorite(models.Model):
     """Модель избранное."""
 
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
 
     class Meta:
@@ -198,37 +172,3 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f"Список избранных рецептов {self.user.username}"
-
-
-class Subscription(models.Model):
-    """Модель подписки."""
-
-    id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(
-        CustomUser,
-        verbose_name="Подписчик",
-        on_delete=models.CASCADE,
-        related_name="follower",
-    )
-    author = models.ForeignKey(
-        CustomUser,
-        verbose_name="Автор рецепта",
-        on_delete=models.CASCADE,
-        related_name="following",
-    )
-
-    class Meta:
-        verbose_name = "Подписка"
-        verbose_name_plural = "Подписки"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "author"], name="unique_follow"
-            ),
-            models.CheckConstraint(
-                name="user_is_not_author",
-                check=~models.Q(user=models.F("author")),
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.user.username} подписан на {self.author.username}"

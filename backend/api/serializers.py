@@ -1,21 +1,24 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework import serializers
 from drf_extra_fields.fields import Base64ImageField
 from django.shortcuts import get_object_or_404
 
-from users.models import CustomUser
-from api.models import (
+from users.models import Subscription
+from .models import (
     Ingredient,
     Tag,
     Recipe,
     ShoppingCart,
     Favorite,
     RecipeIngredient,
-    Subscription,
 )
 
-from .validators import validate_username_not_me
+from ..users.validators import validate_username_not_me
+
+
+User = get_user_model()
 
 
 class SignUpSerializer(serializers.Serializer):
@@ -38,8 +41,8 @@ class SignUpSerializer(serializers.Serializer):
         username = data.get("username")
         email = data.get("email")
 
-        email_exists = CustomUser.objects.filter(email=email).exists()
-        username_exists = CustomUser.objects.filter(username=username).exists()
+        email_exists = User.objects.filter(email=email).exists()
+        username_exists = User.objects.filter(username=username).exists()
 
         error_msg = {}
         if email_exists:
@@ -75,7 +78,7 @@ class UserSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = (
             "email",
             "id",
@@ -298,7 +301,7 @@ class FollowSerializer(serializers.ModelSerializer):
     recipes_count = serializers.SerializerMethodField()
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = (
             "email",
             "id",
