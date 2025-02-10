@@ -58,7 +58,7 @@ class Recipe(models.Model):
 
     id = models.AutoField(primary_key=True)
     name = models.CharField(
-        "Название рецепта", max_length=settings.MAX_RECIPE_NAME_LENGTH
+        "Название рецепта", max_length=settings.MAX_RECIPES_NAME_LENGTH
     )
     ingredients = models.ManyToManyField(
         "Ingredient",
@@ -81,7 +81,7 @@ class Recipe(models.Model):
     text = models.TextField("Описание рецепта")
     image = Base64ImageField()
     author = models.ForeignKey(
-        "User",
+        User,
         on_delete=models.CASCADE,
         verbose_name="Автор",
         related_name="recipes",
