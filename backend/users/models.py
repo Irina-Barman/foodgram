@@ -30,6 +30,12 @@ class CustomUser(AbstractUser):
     last_name = models.CharField(
         max_length=settings.MAX_NAME_LENGTH, verbose_name="Фамилия", blank=True
     )
+    avatar = models.ImageField(
+        upload_to='avatars/',
+        blank=True,
+        null=True,
+        verbose_name="Аватар"
+    )
 
     class Meta:
         verbose_name = "Пользователь"

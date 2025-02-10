@@ -28,7 +28,6 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             )
         )
 
-
 class IsAuthorOrAdminOrReadOnly(permissions.BasePermission):
     """
     Пользовательское разрешение для проверки прав доступа.
