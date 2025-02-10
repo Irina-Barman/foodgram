@@ -1,9 +1,32 @@
-from djoser.views import UserViewSet
+from api.serializers import (
+    IngredientSerializer,
+    TagSerializer,
+    RecipeReadSerializer,
+    ShoppingCartSerializer,
+    FavoriteSerializer,
+)
 
-from api.permissions import
-from .serializers import 
+
+class IngredientViewSet:
+    #  Получение ингридиента, списка ингридиентов
+    pass
 
 
-# User ViewSet из Djoser
-class CustomUserViewSet(UserViewSet):
+class TagViewSet:
+    #  Получение тега, списка тегов
+    pass
+
+
+class RecipeViewSet:
+    #  Получение рецепта, списка рецептов, создание, редактирование, удаление
+    pass
+
+
+class ShoppingCartViewSet:
+    # Добавление, удаление, скачивание рецепта из списка покупок
+    pass
+
+
+class FavoriteViewSet:
+    # Cоздание, удаление подписки
     pass

@@ -98,7 +98,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class ShortRecipeSerializer(serializers.ModelSerializer):
-    """Сериализатор рецептов для простого короткого отображения."""
+    """Сериализатор рецептов для краткого отображения."""
 
     class Meta:
         model = Recipe
@@ -280,7 +280,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return RecipeReadSerializer(instance, context=self.context).data
 
 
-class FollowSerializer(serializers.ModelSerializer):
+class SubscriptionSerializer(serializers.ModelSerializer):
     """Сериализатор подписок."""
 
     recipes = serializers.SerializerMethodField()

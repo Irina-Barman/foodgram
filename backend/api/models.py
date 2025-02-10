@@ -8,26 +8,6 @@ from django.db import models
 User = get_user_model()
 
 
-class Tag(models.Model):
-    """Модель тег."""
-
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(
-        "Название тега", max_length=settings.MAX_TAG_LENGTH, unique=True
-    )
-    slug = models.SlugField(
-        "Слаг тега", max_length=settings.MAX_TAG_LENGTH, unique=True
-    )
-
-    class Meta:
-        ordering = ["id"]
-        verbose_name = "Тег"
-        verbose_name_plural = "Теги"
-
-    def __str__(self):
-        return self.name
-
-
 class Ingredient(models.Model):
     """Модель Ингредиенты."""
 
@@ -53,6 +33,26 @@ class Ingredient(models.Model):
         return f"{self.name} {self.measurement_unit}"
 
 
+class Tag(models.Model):
+    """Модель тег."""
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(
+        "Название тега", max_length=settings.MAX_TAG_LENGTH, unique=True
+    )
+    slug = models.SlugField(
+        "Слаг тега", max_length=settings.MAX_TAG_LENGTH, unique=True
+    )
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Тег"
+        verbose_name_plural = "Теги"
+
+    def __str__(self):
+        return self.name
+
+
 class Recipe(models.Model):
     """Модель рецепта."""
 
@@ -61,7 +61,7 @@ class Recipe(models.Model):
         "Название рецепта", max_length=settings.MAX_RECIPE_NAME_LENGTH
     )
     ingredients = models.ManyToManyField(
-        'Ingredient',
+        "Ingredient",
         through="RecipeIngredient",
         verbose_name="Ингредиенты",
         related_name="recipes",
@@ -74,28 +74,28 @@ class Recipe(models.Model):
                 message=(
                     f"Время приготовления не может быть "
                     f"меньше {settings.MIN_TIME} минут"
-                )
+                ),
             ),
         ],
     )
     text = models.TextField("Описание рецепта")
     image = Base64ImageField()
     author = models.ForeignKey(
-        'User ',
+        "User",
         on_delete=models.CASCADE,
         verbose_name="Автор",
         related_name="recipes",
     )
     pub_date = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(
-        'Tag',
+        "Tag",
         verbose_name="Теги",
     )
 
     class Meta:
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"
-        ordering = ['-pub_date']  # Сортировка от новых к старым
+        ordering = ["-pub_date"]  # Сортировка от новых к старым
 
     def __str__(self):
         return self.name
