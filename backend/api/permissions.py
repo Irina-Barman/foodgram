@@ -6,10 +6,10 @@ class IsAdmin(permissions.BasePermission):
     Разрешение для администраторов и суперпользователей.
     Полный доступ только администраторам и суперпользователям Django.
     """
+
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and (request.user.is_admin or request.user.is_superuser)
+        return request.user.is_authenticated and (
+            request.user.is_admin or request.user.is_superuser
         )
 
 
@@ -19,14 +19,12 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     Изменение контента доступно только администраторам.
     Чтение доступно всем.
     """
+
     def has_permission(self, request, view):
-        return (
-            request.method in permissions.SAFE_METHODS
-            or (
-                request.user.is_authenticated
-                and request.user.is_admin
-            )
+        return request.method in permissions.SAFE_METHODS or (
+            request.user.is_authenticated and request.user.is_admin
         )
+
 
 class IsAuthorOrAdminOrReadOnly(permissions.BasePermission):
     """
@@ -37,6 +35,7 @@ class IsAuthorOrAdminOrReadOnly(permissions.BasePermission):
     - Создание аутентифицированным пользователям
     - Изменение и удаление авторам контента и администраторам
     """
+
     def has_permission(self, request, view):
         return (
             request.method in permissions.SAFE_METHODS

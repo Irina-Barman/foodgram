@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.validators import UnicodeUsernameValidator
+from rest_framework.validators import UniqueValidator
+from djoser.serializers import UserCreateSerializer
+
 from rest_framework import serializers
 from drf_extra_fields.fields import Base64ImageField
 from django.shortcuts import get_object_or_404
@@ -15,30 +17,40 @@ from .models import (
     RecipeIngredient,
 )
 
-from ..users.validators import validate_username_not_me
+from users.validators import validate_username_not_me
 
 User = get_user_model()
 
 
-class SignUpSerializer(serializers.Serializer):
+class SignUpSerializer(UserCreateSerializer):
     """Сериализатор для регистрации пользователей."""
 
     username = serializers.CharField(
-        max_length=settings.MAX_USERNAME_LENGTH,
-        required=True,
         validators=[
-            UnicodeUsernameValidator(),
+            UniqueValidator(queryset=User.objects.all()),
             validate_username_not_me,
-        ],
+        ]
     )
     email = serializers.EmailField(
-        max_length=settings.MAX_EMAIL_LENGTH, required=True
+        validators=[UniqueValidator(queryset=User.objects.all())]
     )
+
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "password",
+        )
+        extra_kwargs = {"password": {"write_only": True}}
 
     def validate(self, data):
         """Проверяет валидность данных при регистрации."""
-        username = data.get("username")
-        email = data.get("email")
+        username = data["username"]
+        email = data["email"]
 
         errors = {}
         if User.objects.filter(email=email).exists():
@@ -73,9 +85,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         user = self.context.get("request").user
-        if user.is_authenticated:
-            return Subscription.objects.filter(user=user, author=obj).exists()
-        return False
+        return (
+            user.is_authenticated
+            and Subscription.objects.filter(user=user, author=obj).exists()
+        )
 
 
 class IngredientSerializer(serializers.ModelSerializer):

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 from api.models import (
     Ingredient,
@@ -9,6 +10,8 @@ from api.models import (
     Favorite,
 )
 from users.models import CustomUser, Subscription
+
+User = get_user_model()
 
 
 class CustomUserAdmin(UserAdmin):
@@ -26,9 +29,7 @@ class CustomUserAdmin(UserAdmin):
     list_filter = ("is_staff", "is_active")
     search_fields = ("username", "email", "first_name", "last_name")
     ordering = ("username",)
-    fieldsets = UserAdmin.fieldsets + (
-        (None, {"fields": ("avatar",)}),
-    )
+    fieldsets = UserAdmin.fieldsets + ((None, {"fields": ("avatar",)}),)
 
 
 class IngredientAdmin(admin.ModelAdmin):
@@ -55,9 +56,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
     def count_favorited(self, obj):
         """Метод выводит общее число добавлений рецепта в избранное"""
-        return (
-            obj.favorite_set.count()
-        )
+        return obj.favorite_set.count()
 
 
 class ShoppingListAdmin(admin.ModelAdmin):
@@ -87,6 +86,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     list_filter = ("user", "author")
 
 
+admin.site.register(User, CustomUserAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)
