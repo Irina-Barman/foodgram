@@ -38,15 +38,15 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "users.apps.UsersConfig",
-    "api.apps.ApiConfig",
-    "recipes.apps.RecipesConfig",
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
     "django_filters",
     "djoser",
     "colorfield",
+    "api",
+    "users",
+    "recipes",
 ]
 
 MIDDLEWARE = [
@@ -149,13 +149,13 @@ DJOSER = {
     "LOGIN_FIELD": "email",
     "HIDE_USERS": False,
     "SERIALIZERS": {
-        "user": ("api.serializers.UsersSerializer"),
-        "user_create": ("api.serializers.CreateUserSerializer"),
-        "current_user": ("api.serializers.UsersSerializer"),
+        "user": "api.serializers.CustomUserSerializer",
+        "user_create": "api.serializers.CreateUserSerializer",
+        "current_user": "api.serializers.CustomUserSerializer",
     },
     "PERMISSIONS": {
-        "user": ("rest_framework.permissions.IsAuthenticated"),
-        "user_delete": ("rest_framework.permissions.IsAdminUser"),
+        "user": "rest_framework.permissions.IsAuthenticated",
+        "user_delete": "rest_framework.permissions.IsAdminUser",
     },
 }
 

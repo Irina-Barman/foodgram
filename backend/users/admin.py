@@ -1,10 +1,10 @@
 from django.contrib import admin
 from django.contrib.admin import register
 
-from .models import Follow, User
+from .models import Subscription, CustomUser
 
 
-@register(User)
+@register(CustomUser)
 class PersonAdmin(admin.ModelAdmin):
     list_display = ('username', 'first_name',
                     'last_name', 'email', 'password')
@@ -12,7 +12,7 @@ class PersonAdmin(admin.ModelAdmin):
     save_on_top = True
 
 
-@register(Follow)
+@register(Subscription)
 class FollowAdmin(admin.ModelAdmin):
     list_display = ('author', 'user',)
     search_fields = ('user', 'author',)

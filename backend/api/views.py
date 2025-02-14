@@ -30,18 +30,18 @@ from .serializers import (
     RecipeForSubscriptionSerializer,
     RecipeSerializer,
     TagSerializer,
-    UserSerializer,
+    CustomUserSerializer,
 )
 
 
 User = get_user_model()
 
 
-class UserViewSet(UserViewSet):
+class CustomUserViewSet(UserViewSet):
     """Вьюсет для модели пользователей."""
 
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = CustomUserSerializer
     pagination_class = LimitPagePagination
     filter_backends = (
         DjangoFilterBackend,
