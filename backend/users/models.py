@@ -1,87 +1,91 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
-from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
+from django.db.models import F, Q
 
-from users.validators import validate_username_not_me
+
+User = get_user_model()
+HELP_TEXT = "Обязательное поле. Максимальное количество символов: "
 
 
 class CustomUser(AbstractUser):
-    """Кастомный класс User."""
+    """Модель для пользователей."""
 
-    id = models.AutoField(primary_key=True)
     username = models.CharField(
+        "Уникальный юзернейм",
         max_length=settings.MAX_USERNAME_LENGTH,
-        verbose_name="Имя пользователя",
+        blank=False,
         unique=True,
-        validators=[
-            UnicodeUsernameValidator(),
-            validate_username_not_me,
-        ],
+        help_text=(f"{HELP_TEXT}{settings.MAX_USERNAME_LENGTH}"),
+    )
+    password = models.CharField(
+        "Пароль",
+        max_length=settings.MAX_PASSWORD_LENGTH,
+        blank=False,
+        help_text=HELP_TEXT,
     )
     email = models.EmailField(
+        "Адрес электронной почты",
         max_length=settings.MAX_EMAIL_LENGTH,
-        verbose_name="Email",
+        blank=False,
         unique=True,
+        help_text=(f"{HELP_TEXT}{settings.MAX_EMAIL_LENGTH}"),
     )
     first_name = models.CharField(
-        max_length=settings.MAX_NAME_LENGTH, verbose_name="Имя", blank=True
+        "Имя",
+        max_length=settings.MAX_USERNAME_LENGTH,
+        blank=False,
+        help_text=(f"{HELP_TEXT}{settings.MAX_USERNAME_LENGTH}"),
     )
     last_name = models.CharField(
-        max_length=settings.MAX_NAME_LENGTH, verbose_name="Фамилия", blank=True
+        "Фамилия",
+        max_length=settings.MAX_USERNAME_LENGTH,
+        blank=False,
+        help_text=(f"{HELP_TEXT}{settings.MAX_USERNAME_LENGTH}"),
     )
     avatar = models.ImageField(
-        upload_to='avatars/',
-        blank=True,
-        null=True,
-        verbose_name="Аватар"
+        upload_to="avatars/", blank=True, null=True, verbose_name="Аватар"
     )
 
     class Meta:
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
-        ordering = ("id",)
-        constraints = [
-            models.UniqueConstraint(
-                fields=["username", "email"],
-                name="unique_username_email_constraint",
-            )
-        ]
 
-    @property
-    def is_admin(self):
-        return self.is_superuser or self.is_admin
+    def __str__(self):
+        return f"{self.username}: {self.first_name}"
 
 
 class Subscription(models.Model):
-    """Модель подписки."""
+    """Модель для подписчиков."""
 
-    id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
         CustomUser,
-        verbose_name="Подписчик",
         on_delete=models.CASCADE,
-        related_name="follower",
+        related_name="subscriber",
+        verbose_name="Подписчик",
     )
     author = models.ForeignKey(
         CustomUser,
-        verbose_name="Автор рецепта",
         on_delete=models.CASCADE,
-        related_name="following",
+        related_name="subscription",
+        verbose_name="Автор",
     )
 
     class Meta:
-        verbose_name = "Подписка"
-        verbose_name_plural = "Подписки"
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "author"], name="unique_follow"
+                fields=["user", "author"],
+                name="unique_subscription",
             ),
             models.CheckConstraint(
-                name="user_is_not_author",
-                check=~models.Q(user=models.F("author")),
+                check=~Q(user=F("author")),
+                name="cannot_subscription_self",
             ),
         ]
+        ordering = ["-id"]
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
 
     def __str__(self):
-        return f"{self.user.username} подписан на {self.author.username}"
+        return f"{self.user} подписался на {self.author}"

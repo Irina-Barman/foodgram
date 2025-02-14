@@ -1,50 +1,22 @@
-from rest_framework import permissions
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
-class IsAdmin(permissions.BasePermission):
-    """
-    Разрешение для администраторов и суперпользователей.
-    Полный доступ только администраторам и суперпользователям Django.
-    """
-
+class AdminOrReadOnly(BasePermission):
+    """Пермишен с правами доступа для администраторов."""
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (
-            request.user.is_admin or request.user.is_superuser
-        )
+        return (request.method in SAFE_METHODS
+                or request.user and request.user.is_superuser)
 
 
-class IsAdminOrReadOnly(permissions.BasePermission):
-    """
-    Разрешение для администраторов или только для чтения.
-    Изменение контента доступно только администраторам.
-    Чтение доступно всем.
-    """
-
-    def has_permission(self, request, view):
-        return request.method in permissions.SAFE_METHODS or (
-            request.user.is_authenticated and request.user.is_admin
-        )
-
-
-class IsAuthorOrAdminOrReadOnly(permissions.BasePermission):
-    """
-    Пользовательское разрешение для проверки прав доступа.
-
-    Разрешает:
-    - Чтение всем пользователям
-    - Создание аутентифицированным пользователям
-    - Изменение и удаление авторам контента и администраторам
-    """
-
-    def has_permission(self, request, view):
-        return (
-            request.method in permissions.SAFE_METHODS
-            or request.user.is_authenticated
-        )
-
+class AuthorOrReadOnly(BasePermission):
+    """Пермишен с правами доступа для авторов."""
     def has_object_permission(self, request, view, obj):
-        return (
-            request.method in permissions.SAFE_METHODS
-            or obj.author == request.user
-            or request.user.is_admin
-        )
+        return (request.method in SAFE_METHODS
+                or request.user == obj.author)
+
+
+class AdminOrAuthor(BasePermission):
+    """Пермишен с правами доступа для администраторов и авторов."""
+    def has_object_permission(self, request, view, obj):
+        return (request.method in SAFE_METHODS
+                or request.user == obj.author or request.user.is_superuser)

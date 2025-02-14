@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,13 +38,15 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "users.apps.UsersConfig",
+    "api.apps.ApiConfig",
+    "recipes.apps.RecipesConfig",
     "django.contrib.staticfiles",
-    "rest_framework.authtoken",
     "rest_framework",
+    "rest_framework.authtoken",
+    "django_filters",
     "djoser",
-    "drf_extra_fields",
-    "users",
-    "api",
+    "colorfield",
 ]
 
 MIDDLEWARE = [
@@ -112,7 +113,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru-RU"
 
 TIME_ZONE = "UTC"
 
@@ -148,25 +149,31 @@ DJOSER = {
     "LOGIN_FIELD": "email",
     "HIDE_USERS": False,
     "SERIALIZERS": {
-        "user": "api.serializers.UserSerializer",
-        "current_user": "api.serializers.UserSerializer",
-        "user_create": "api.serializers.SignUpSerializer",
+        "user": ("api.serializers.UsersSerializer"),
+        "user_create": ("api.serializers.CreateUserSerializer"),
+        "current_user": ("api.serializers.UsersSerializer"),
     },
     "PERMISSIONS": {
-        "user": [IsAuthenticated],
-        "user_delete": [IsAdminUser],
+        "user": ("rest_framework.permissions.IsAuthenticated"),
+        "user_delete": ("rest_framework.permissions.IsAdminUser"),
     },
 }
 
-
 # Константы
-MAX_USERNAME_LENGTH = 150
-MAX_NAME_LENGTH = 150
-MAX_EMAIL_LENGTH = 254
-MAX_RECIPES_NAME_LENGTH = 256
-MAX_INGREDIENTS_NAME_LENGTH = 128
+MAX_TAG_SLUG_LENGTH = 200
 MAX_TAG_LENGTH = 32
-MAX_MEASUREMENT_UNIT_LENGTH = 64
+
+MAX_USERNAME_LENGTH = 150
+MAX_EMAIL_LENGTH = 254
+MAX_PASSWORD_LENGTH = 300
+
+MAX_RECIPES_NAME_LENGTH = 256
 MIN_TIME = 1
-MIN_INGREDIENTS = 1
+
+MAX_INGREDIENTS_NAME_LENGTH = 128
+MIN_INGREDIENT_AMOUNT = 1
+
+MAX_MEASUREMENT_UNIT_LENGTH = 64
+MAX_UNIT_LENGTH = 40
+
 PAGE_SIZE = 6
