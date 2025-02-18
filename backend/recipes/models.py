@@ -12,11 +12,11 @@ class Tag(models.Model):
 
     name = models.CharField(
         "Тэг",
-        max_length=settings.MAX_TAG_LENGTH,
+        max_length=getattr(settings, "MAX_TAG_LENGTH", 32),
         unique=True,
     )
     slug = models.SlugField(
-        max_length=settings.MAX_TAG_SLUG_LENGTH,
+        max_length=getattr(settings, "MAX_TAG_SLUG_LENGTH", 200),
         verbose_name="Имя для ссылки",
         null=False,
         unique=True,
@@ -36,11 +36,11 @@ class Ingredient(models.Model):
 
     name = models.CharField(
         "Ингредиент",
-        max_length=settings.MAX_INGREDIENTS_NAME_LENGTH,
+        max_length=getattr(settings, "MAX_INGREDIENTS_NAME_LENGTH", 128),
     )
     measurement_unit = models.CharField(
         "Единица измерения",
-        max_length=settings.MAX_UNIT_LENGTH,
+        max_length=getattr(settings, "MAX_UNIT_LENGTH", 40),
         help_text="Укажите единицу измерения",
     )
 
@@ -64,7 +64,7 @@ class Recipe(models.Model):
     )
     name = models.CharField(
         "Название",
-        max_length=settings.MAX_RECIPES_NAME_LENGTH,
+        max_length=getattr(settings, "MAX_RECIPES_NAME_LENGTH", 256),
     )
     image = models.ImageField(
         "Изображение",
@@ -87,10 +87,10 @@ class Recipe(models.Model):
         "Время приготовления (в минутах)",
         validators=[
             MinValueValidator(
-                settings.MIN_TIME,
+                getattr(settings, "MIN_TIME", 1),
                 message=(
                     f"Время приготовления не может быть меньше "
-                    f"{settings.MIN_TIME}",
+                    f"{(getattr(settings, 'MIN_TIME', 1),)}",
                 ),
             ),
         ],
@@ -124,10 +124,10 @@ class AmountIngredient(models.Model):
         default=0,
         validators=[
             MinValueValidator(
-                settings.MIN_INGREDIENT_AMOUNT,
+                getattr(settings, "MIN_INGREDIENT_AMOUNT", 1),
                 message=(
                     f"Количество не может быть меньше "
-                    f"{settings.MIN_INGREDIENT_AMOUNT}",
+                    f"{getattr(settings, 'MIN_INGREDIENT_AMOUNT', 1)}",
                 ),
             ),
         ],

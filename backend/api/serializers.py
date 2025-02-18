@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.db.models import F
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
+from django.core.validators import MaxLengthValidator
 from drf_extra_fields.fields import Base64ImageField
 from recipes.models import (
     AmountIngredient,
@@ -33,7 +35,10 @@ class CreateUserSerializer(UserCreateSerializer):
     """Сериализатор для регистрации пользователей."""
 
     username = CharField(
-        validators=[UniqueValidator(queryset=User.objects.all())]
+        validators=[
+            UniqueValidator(queryset=User.objects.all()),
+            MaxLengthValidator(getattr(settings, "MAX_USERNAME_LENGTH", 150)),
+        ]
     )
     email = EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())]
@@ -51,11 +56,17 @@ class CreateUserSerializer(UserCreateSerializer):
         )
         extra_kwargs = {"password": {"write_only": True}}
 
+    def create(self, validated_data):
+        """Переопределяем метод создания пользователя."""
+        user = super().create(validated_data)  # Создаем пользователя
+        return user
+
 
 class CustomUserSerializer(UserSerializer):
     """Сериализатор пользователей."""
 
     is_subscribed = SerializerMethodField()
+    avatar = Base64ImageField(allow_null=True)  # Поле аватара
 
     class Meta:
         model = User
@@ -66,6 +77,7 @@ class CustomUserSerializer(UserSerializer):
             "first_name",
             "last_name",
             "is_subscribed",
+            "avatar",
         )
 
     def get_is_subscribed(self, obj):

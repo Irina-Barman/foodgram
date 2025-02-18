@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from django.db.models import Sum
 import base64
 from django.core.files.base import ContentFile
@@ -40,7 +41,7 @@ User = get_user_model()
 class CustomUserViewSet(UserViewSet):
     """Вьюсет для модели пользователей."""
 
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('username')
     serializer_class = CustomUserSerializer
     pagination_class = LimitPagePagination
     filter_backends = (
@@ -48,51 +49,69 @@ class CustomUserViewSet(UserViewSet):
         filters.SearchFilter,
     )
     search_fields = ("username", "email")
-    permission_classes = (AllowAny,)
+    permission_classes = (AllowAny,)  # Доступ для всех
 
-    def subscribed(self, serializer, id=None):
-        subscription = get_object_or_404(User, id=id)
-        if self.request.user == subscription:
+    def subscribed(self, subscription_user):
+        if self.request.user == subscription_user:
             return Response(
                 {"message": "Нельзя подписаться на себя"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        subscriber = Subscription.objects.get_or_create(
-            user=self.request.user, author=subscription
+        subscriber, created = Subscription.objects.get_or_create(
+            user=self.request.user, author=subscription_user
         )
-        serializer = SubscriptionSerializer(subscriber[0])
+        serializer = SubscriptionSerializer(subscriber)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def unsubscribed(self, serializer, id=None):
-        subscription = get_object_or_404(User, id=id)
-        Subscription.objects.filter(
-            user=self.request.user, author=subscription
-        ).delete()
+    def unsubscribed(self, subscription_user):
+        subscription = get_object_or_404(
+            Subscription, user=self.request.user, author=subscription_user
+        )
+        subscription.delete()
         return Response(
             {"message": "Вы успешно отписаны"}, status=status.HTTP_200_OK
         )
+
+    @action(
+        detail=False, methods=["get"], permission_classes=[IsAuthenticated]
+    )
+    def me(self, request):
+        user = request.user
+        if isinstance(user, AnonymousUser):
+            return Response(
+                {"detail": "Необходима аутентификация."}, status=401
+            )
+
+        serializer = CustomUserSerializer(user)
+        return Response(serializer.data)
 
     @action(
         detail=True,
         methods=["post", "delete"],
         permission_classes=[permissions.IsAuthenticated],
     )
-    def subscribe(self, serializer, id):
-        if self.request.method == "DELETE":
-            return self.unsubscribed(serializer, id)
-        return self.subscribed(serializer, id)
+    def subscribe(self, request, id):
+        subscription_user = get_object_or_404(User, id=id)
+        if request.method == "DELETE":
+            return self.unsubscribed(subscription_user)
+        return self.subscribed(subscription_user)
 
     @action(
         detail=False,
         methods=["get"],
-        permission_classes=[permissions.IsAuthenticated],
+        permission_classes=[permissions.AllowAny],  # Доступ для всех
     )
-    def subscriptions(self, serializer):
-        subscription = Subscription.objects.filter(user=self.request.user)
-        pages = self.paginate_queryset(subscription)
+    def subscriptions(self, request):
+        subscriptions = Subscription.objects.filter(user=self.request.user)
+        pages = self.paginate_queryset(subscriptions)
         serializer = SubscriptionSerializer(pages, many=True)
         return self.get_paginated_response(serializer.data)
 
+    @action(
+        detail=False,
+        methods=["put", "delete"],
+        permission_classes=[permissions.IsAuthenticated],
+    )
     def avatar(self, request):
         """Добавление или удаление аватара текущего пользователя."""
         user = request.user

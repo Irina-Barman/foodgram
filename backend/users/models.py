@@ -12,35 +12,41 @@ class CustomUser(AbstractUser):
 
     username = models.CharField(
         "Уникальный юзернейм",
-        max_length=settings.MAX_USERNAME_LENGTH,
+        max_length=getattr(settings, "MAX_USERNAME_LENGTH", 150),
         blank=False,
         unique=True,
-        help_text=(f"{HELP_TEXT}{settings.MAX_USERNAME_LENGTH}"),
+        help_text=(
+            f"{HELP_TEXT}{getattr(settings, 'MAX_USERNAME_LENGTH', 150)}"
+        ),
     )
     password = models.CharField(
         "Пароль",
-        max_length=settings.MAX_PASSWORD_LENGTH,
+        max_length=getattr(settings, "MAX_PASSWORD_LENGTH", 300),
         blank=False,
         help_text=HELP_TEXT,
     )
     email = models.EmailField(
         "Адрес электронной почты",
-        max_length=settings.MAX_EMAIL_LENGTH,
+        max_length=getattr(settings, "MAX_EMAIL_LENGTH", 254),
         blank=False,
         unique=True,
-        help_text=(f"{HELP_TEXT}{settings.MAX_EMAIL_LENGTH}"),
+        help_text=(f"{HELP_TEXT}{getattr(settings, 'MAX_EMAIL_LENGTH', 254)}"),
     )
     first_name = models.CharField(
         "Имя",
-        max_length=settings.MAX_USERNAME_LENGTH,
+        max_length=getattr(settings, "MAX_USERNAME_LENGTH", 150),
         blank=False,
-        help_text=(f"{HELP_TEXT}{settings.MAX_USERNAME_LENGTH}"),
+        help_text=(
+            f"{HELP_TEXT}{getattr(settings, 'MAX_USERNAME_LENGTH', 150)}"
+        ),
     )
     last_name = models.CharField(
         "Фамилия",
-        max_length=settings.MAX_USERNAME_LENGTH,
+        max_length=getattr(settings, "MAX_USERNAME_LENGTH", 150),
         blank=False,
-        help_text=(f"{HELP_TEXT}{settings.MAX_USERNAME_LENGTH}"),
+        help_text=(
+            f"{HELP_TEXT}{getattr(settings, 'MAX_USERNAME_LENGTH', 150)}"
+        ),
     )
     avatar = models.ImageField(
         upload_to="avatars/", blank=True, null=True, verbose_name="Аватар"
