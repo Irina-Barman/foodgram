@@ -80,16 +80,15 @@ class Subscription(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "author"],
-                name="unique_subscription",
+                name="Вы уже подписаны на данного автора",
             ),
             models.CheckConstraint(
-                check=~Q(user=F("author")),
-                name="cannot_subscription_self",
+                check=~Q(user=F("author")), name="Нельзя подписаться на себя"
             ),
         ]
         ordering = ["-id"]
         verbose_name = "Подписка"
         verbose_name_plural = "Подписки"
 
-    def __str__(self):
-        return f"{self.user} подписался на {self.author}"
+        def __str__(self):
+            return f"{self.user} подписался на {self.author}"

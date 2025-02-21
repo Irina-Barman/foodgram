@@ -56,17 +56,12 @@ class CreateUserSerializer(UserCreateSerializer):
         )
         extra_kwargs = {"password": {"write_only": True}}
 
-    def create(self, validated_data):
-        """Переопределяем метод создания пользователя."""
-        user = super().create(validated_data)  # Создаем пользователя
-        return user
-
 
 class CustomUserSerializer(UserSerializer):
     """Сериализатор пользователей."""
 
     is_subscribed = SerializerMethodField()
-    avatar = Base64ImageField(allow_null=True)  # Поле аватара
+    avatar = Base64ImageField(allow_null=True)
 
     class Meta:
         model = User
@@ -155,6 +150,11 @@ class RecipeSerializer(ModelSerializer):
             "cooking_time",
         )
 
+    def get_image(self, obj):
+        if obj.image:  # Проверяем, есть ли файл
+            return obj.image.url
+        return None
+
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get("request").user
         if user.is_authenticated:
@@ -163,7 +163,9 @@ class RecipeSerializer(ModelSerializer):
 
     def get_is_favorited(self, obj):
         user = self.context.get("request").user
-        if user.is_authenticated or self.context.get("request") is not None:
+        if (
+            user.is_authenticated
+        ):  # Проверяем, аутентифицирован ли пользователь
             return Favorite.objects.filter(user=user, recipe=obj).exists()
         return False
 
@@ -179,7 +181,9 @@ class RecipeCreateSerializer(ModelSerializer):
     ingredients = IngredientCreateSerializer(many=True)
     tags = PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
     image = Base64ImageField()
-    name = CharField(max_length=200)
+    name = CharField(
+        max_length=getattr(settings, "MAX_RECIPES_NAME_LENGTH", 256)
+    )
     cooking_time = IntegerField()
     author = CustomUserSerializer(read_only=True)
 
@@ -212,17 +216,19 @@ class RecipeCreateSerializer(ModelSerializer):
             )
 
     def create(self, validated_data):
-        tags_data = validated_data.pop("tags")
-        ingredients_data = validated_data.pop("ingredients")
-        image = validated_data.pop("image")
+        tags_data = validated_data.pop("tags", [])
+        ingredients_data = validated_data.pop("ingredients", [])
+        image = validated_data.pop("image", None)
+
         recipe = Recipe.objects.create(image=image, **validated_data)
         self.create_ingredients(ingredients_data, recipe)
         recipe.tags.set(tags_data)
         return recipe
 
     def update(self, recipe, validated_data):
-        ingredients = validated_data.pop("ingredients")
-        tags = validated_data.pop("tags")
+        ingredients = validated_data.pop("ingredients", [])
+        tags = validated_data.pop("tags", [])
+
         AmountIngredient.objects.filter(recipe=recipe).delete()
         self.create_ingredients(ingredients, recipe)
         recipe.tags.set(tags)
@@ -255,6 +261,11 @@ class RecipeForSubscriptionSerializer(ModelSerializer):
         model = Recipe
         fields = ("id", "name", "image", "cooking_time")
 
+    def get_image(self, obj):
+        if obj.image:  # Проверяем, есть ли файл
+            return obj.image.url
+        return None
+
 
 class RecipeSubscriptionUserField(Field):
     """Сериализатор для вывода рецептов в подписках."""
@@ -269,7 +280,7 @@ class RecipeSubscriptionUserField(Field):
                 {
                     "id": recipes.id,
                     "name": recipes.name,
-                    "image": recipes.image.url,
+                    "image": recipes.image.url if recipes.image else None,
                     "cooking_time": recipes.cooking_time,
                 }
             )
