@@ -1,94 +1,86 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import F, Q
 
 
 HELP_TEXT = "Обязательное поле. Максимальное количество символов: "
 
 
 class CustomUser(AbstractUser):
-    """Модель для пользователей."""
+    """Модель пользователя."""
+
+    REQUIRED_FIELDS = ["id","email", "first_name", "last_name"]
 
     username = models.CharField(
-        "Уникальный юзернейм",
         max_length=getattr(settings, "MAX_USERNAME_LENGTH", 150),
-        blank=False,
         unique=True,
+        verbose_name="Логин пользователя",
         help_text=(
             f"{HELP_TEXT}{getattr(settings, 'MAX_USERNAME_LENGTH', 150)}"
         ),
     )
     password = models.CharField(
-        "Пароль",
         max_length=getattr(settings, "MAX_PASSWORD_LENGTH", 300),
         blank=False,
-        help_text=HELP_TEXT,
+        verbose_name="Пароль пользователя",
+        help_text=(
+            f"{HELP_TEXT}{getattr(settings, 'MAX_PASSWORD_LENGTH', 300)}"
+        ),
     )
     email = models.EmailField(
-        "Адрес электронной почты",
         max_length=getattr(settings, "MAX_EMAIL_LENGTH", 254),
-        blank=False,
         unique=True,
+        verbose_name="Электронная почта",
         help_text=(f"{HELP_TEXT}{getattr(settings, 'MAX_EMAIL_LENGTH', 254)}"),
     )
     first_name = models.CharField(
-        "Имя",
         max_length=getattr(settings, "MAX_USERNAME_LENGTH", 150),
-        blank=False,
+        verbose_name="Имя пользователя",
         help_text=(
             f"{HELP_TEXT}{getattr(settings, 'MAX_USERNAME_LENGTH', 150)}"
         ),
     )
     last_name = models.CharField(
-        "Фамилия",
         max_length=getattr(settings, "MAX_USERNAME_LENGTH", 150),
-        blank=False,
+        verbose_name="Фамилия пользователя",
         help_text=(
             f"{HELP_TEXT}{getattr(settings, 'MAX_USERNAME_LENGTH', 150)}"
         ),
     )
     avatar = models.ImageField(
-        upload_to="avatars/", blank=True, null=True, verbose_name="Аватар"
+        upload_to="users/", blank=True, null=True, verbose_name="Аватар"
     )
 
     class Meta:
-        verbose_name = "Пользователь"
-        verbose_name_plural = "Пользователи"
+        ordering = ("username",)
 
     def __str__(self):
-        return f"{self.username}: {self.first_name}"
+        return self.username
 
 
 class Subscription(models.Model):
-    """Модель для подписчиков."""
+    """Модель подписки."""
 
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name="subscriber",
+        related_name="subscriptions",
         verbose_name="Подписчик",
     )
     author = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name="subscription",
+        related_name="subscribers",
         verbose_name="Автор",
     )
 
     class Meta:
+        ordering = ['-id']
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "author"],
-                name="Вы уже подписаны на данного автора",
-            ),
-            models.CheckConstraint(
-                check=~Q(user=F("author")), name="Нельзя подписаться на себя"
-            ),
+                fields=["user", "author"], name="subscriptions_unique"
+            )
         ]
-        ordering = ["-id"]
-        verbose_name = "Подписка"
-        verbose_name_plural = "Подписки"
 
-        def __str__(self):
-            return f"{self.user} подписался на {self.author}"
+    def __str__(self):
+        return f"Подписка {self.user} на {self.author}"

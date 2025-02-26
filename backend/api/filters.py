@@ -1,32 +1,41 @@
-from urllib import request
+from django.contrib.auth import get_user_model
 
-from django_filters.rest_framework import (AllValuesMultipleFilter,
-                                           BooleanFilter, FilterSet)
+from django_filters.rest_framework import (
+    AllValuesMultipleFilter,
+    BooleanFilter,
+    FilterSet,
+    ModelChoiceFilter,
+)
 from recipes.models import Recipe
 from rest_framework.filters import SearchFilter
 
+User = get_user_model()
 
-class RecipesFilter(FilterSet):
-    """"Фильтр для сортировки рецептов."""""
-    tags = AllValuesMultipleFilter(field_name='tags__slug',
-                                   label='tags')
-    favorite = BooleanFilter(method='get_favorite')
-    shopping_cart = BooleanFilter(method='get_shopping_cart')
+
+class RecipeFilter(FilterSet):
+    """"Фильтр для сортировки рецептов.""" ""
+
+    author = ModelChoiceFilter(queryset=User.objects.all())
+    tags = AllValuesMultipleFilter(field_name="tags__slug")
+    is_favorited = BooleanFilter(method="filter_is_favorited")
+    is_in_shopping_cart = BooleanFilter(method="filter_is_in_shopping_cart")
 
     class Meta:
         model = Recipe
-        fields = ('author', 'tags', 'favorite',
-                  'shopping_cart')
+        fields = ["author", "tags"]
 
-    def get_favorite(self, queryset, name, value):
+    def filter_is_favorited(self, queryset, name, value):
         if value:
-            return queryset.filter(favorite__user=self.request.user)
-        return queryset.exclude(favorite__user=self.request.user)
+            return queryset.filter(in_favorites__user=self.request.user)
+        return queryset
 
-    def get_shopping_cart(self, queryset, name, value):
+    def filter_is_in_shopping_cart(self, queryset, name, value):
         if value:
-            return Recipe.objects.filter(shopping_cart__user=self.request.user)
+            return queryset.filter(shopping_cart__user=self.request.user)
+        return queryset
 
 
 class IngredientSearchFilter(SearchFilter):
-    search_param = 'name'
+    """Фильтр для поиска ингредиентов по названию"""
+
+    search_param = "name"

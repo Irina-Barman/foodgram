@@ -1,20 +1,22 @@
 from django.contrib import admin
-from django.contrib.admin import register
 
-from .models import Subscription, CustomUser
-
-
-@register(CustomUser)
-class PersonAdmin(admin.ModelAdmin):
-    list_display = ('username', 'first_name',
-                    'last_name', 'email', 'password')
-    list_filter = ('first_name', 'email',)
-    save_on_top = True
+from .models import CustomUser
 
 
-@register(Subscription)
-class FollowAdmin(admin.ModelAdmin):
-    list_display = ('author', 'user',)
-    search_fields = ('user', 'author',)
-    list_per_page = 20
-    save_on_top = True
+class UserAdmin(admin.ModelAdmin):
+    """Класс для представления модели пользователя в админ-зоне."""
+
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "id",
+    )
+    list_filter = (
+        "username",
+        "email",
+    )
+
+
+admin.site.register(CustomUser, UserAdmin)
