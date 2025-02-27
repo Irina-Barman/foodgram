@@ -22,12 +22,38 @@ from .serializers import (
     RecipeSerializer,
     RecipeIngredient,
     FavoritesSerializer,
+    CustomUserSerializer,
 )
 from .pagination import LimitPagePagination
 from .permissions import IsOwnerOrReadOnly
 
 
 User = get_user_model()
+
+
+class CustomUserViewSet(UserViewSet):
+    """Вьюсет для модели пользователя."""
+
+    pagination_class = LimitPagePagination
+    queryset = User.objects.all()
+    serializer_class = CustomUserSerializer
+
+    @action(detail=False, permission_classes=[IsOwnerOrReadOnly])
+    def subscriptions(self, request):
+        """Просмотр подписок пользователя"""
+        queryset = self.request.user.subscriptions.all()
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = SubscriptionSerializer(
+                page, many=True, context={"request": request}
+            )
+            return self.get_paginated_response(serializer.data)
+
+        serializer = SubscriptionSerializer(
+            queryset, many=True, context={"request": request}
+        )
+        return Response(serializer.data)
 
 
 class RecipeViewSet(ModelViewSet):
@@ -49,14 +75,14 @@ class RecipeViewSet(ModelViewSet):
         """Скачивание списка покупок"""
         ingredients = (
             RecipeIngredient.objects.filter(
-                recipe__shopping_cart__user=request.user
+                recipe__in=request.user.shopping_cart.all()
             )
-            .values("ingredients__name", "ingredients__measurement_unit")
+            .values("ingredient__name", "ingredient__measurement_unit")
             .annotate(total_amount=Sum("amount"))
         )
 
         shopping_cart = "\n".join(
-            f"{ingredient['ingredients__name']} - {ingredient['total_amount']} {ingredient['ingredients__measurement_unit']}"
+            f"{ingredient['ingredient__name']} - {ingredient['total_amount']} {ingredient['ingredient__measurement_unit']}"
             for ingredient in ingredients
         )
 
@@ -83,9 +109,7 @@ class FavoritesViewSet(ModelViewSet):
         recipe = get_object_or_404(Recipe, id=recipe_id)
 
         # Проверка на существование
-        if Favorites.objects.filter(
-            user=request.user, recipe=recipe
-        ).exists():
+        if Favorites.objects.filter(user=request.user, recipe=recipe).exists():
             return Response(
                 {"detail": "Recipe is already in favorites."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -168,20 +192,6 @@ class SubscriptionViewSet(ModelViewSet):
         # Удаляем подписку
         subscription.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class CustomUserViewSet(UserViewSet):
-    """Вьюсет для модели пользователя."""
-
-    @action(detail=False, permission_classes=[IsAuthenticated])
-    def subscriptions(self, request):
-        """Просмотр подписок пользователя"""
-        queryset = self.request.user.subscriptions.all()
-        page = self.paginate_queryset(queryset)
-        serializer = SubscriptionSerializer(
-            page, many=True, context={"request": request}
-        )
-        return self.get_paginated_response(serializer.data)
 
 
 class ShoppingCartViewSet(ModelViewSet):
