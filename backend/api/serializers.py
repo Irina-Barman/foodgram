@@ -178,12 +178,16 @@ class RecipeSerializer(ModelSerializer):
         cooking_time = data.get("cooking_time")
         image = data.get("image")
         if not request.user.is_authenticated:
-            raise ValidationError({"detail": "Пользователь не авторизован"}, code=401)
+            raise ValidationError(
+                {"detail": "Пользователь не авторизован"}, code=401
+            )
         if not ingredients:
-            raise ValidationError({"ingredients": "В рецепте отсутствуют ингредиенты"})
+            raise ValidationError(
+                {"ingredients": "В рецепте отсутствуют ингредиенты"}
+            )
         if not tags:
             raise ValidationError({"tags": "В рецепте отсутствуют теги"})
-        
+
         # Проверка на пустое поле image
         if not image:
             raise ValidationError({"image": "Поле image не может быть пустым"})
@@ -196,11 +200,17 @@ class RecipeSerializer(ModelSerializer):
 
             # Проверка на существование ингредиента
             if not Ingredient.objects.filter(id=ingredient_id).exists():
-                raise ValidationError({"ingredients": f"Ингредиент с id {ingredient_id} не существует"})
+                raise ValidationError(
+                    {
+                        "ingredients": f"Ингредиент с id {ingredient_id} не существует"
+                    }
+                )
 
             amount = ingredient_item.get("amount")
             if not isinstance(amount, (int, float)) or amount <= 0:
-                raise ValidationError("Необходимо добавить хотя бы один ингредиент")
+                raise ValidationError(
+                    "Необходимо добавить хотя бы один ингредиент"
+                )
             ingredient_ids.add(ingredient_id)
 
         # Проверка на повторяющиеся теги
@@ -212,14 +222,20 @@ class RecipeSerializer(ModelSerializer):
 
             # Проверка на существование тега
             if not Tag.objects.filter(id=tag).exists():
-                raise ValidationError({"tags": f"Тег с id {tag} не существует"})
+                raise ValidationError(
+                    {"tags": f"Тег с id {tag} не существует"}
+                )
 
         if not isinstance(cooking_time, int) or cooking_time <= 0:
-            raise ValidationError("Время приготовления должно быть положительным целым числом")
+            raise ValidationError(
+                "Время приготовления должно быть положительным целым числом"
+            )
 
         user = self.context.get("request").user
         if Recipe.objects.filter(name=name, author=user).exists():
-            raise ValidationError({"name": "Рецепт с таким именем уже существует"})
+            raise ValidationError(
+                {"name": "Рецепт с таким именем уже существует"}
+            )
 
         return data
 
@@ -302,6 +318,7 @@ class SubscriptionSerializer(ModelSerializer):
 
     recipes = RecipeSubscriptionUserField()
     recipes_count = SerializerMethodField(read_only=True)
+    avatar = Base64ImageField(source="author.avatar")
     id = ReadOnlyField(source="author.id")
     email = ReadOnlyField(source="author.email")
     username = ReadOnlyField(source="author.username")
@@ -312,6 +329,7 @@ class SubscriptionSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = (
+            "avatar",
             "email",
             "id",
             "username",
