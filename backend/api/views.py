@@ -44,17 +44,24 @@ class CustomUserViewSet(UserViewSet):
     def subscriptions(self, request):
         """Просмотр подписок пользователя"""
         queryset = self.request.user.subscriptions.all()
+        recipes_limit = request.query_params.get("recipes_limit", None)
+
+        if recipes_limit is not None:
+            try:
+                recipes_limit = int(recipes_limit)
+            except ValueError:
+                return Response({"error": "Некорректное значение для recipes_limit"}, status=400)
+
+        # Передаем recipes_limit в контекст сериализатора
+        context = {'recipes_limit': recipes_limit} if recipes_limit is not None else {}
+
         page = self.paginate_queryset(queryset)
 
         if page is not None:
-            serializer = SubscriptionSerializer(
-                page, many=True, context={"request": request}
-            )
+            serializer = SubscriptionSerializer(page, many=True, context=context)
             return self.get_paginated_response(serializer.data)
 
-        serializer = SubscriptionSerializer(
-            queryset, many=True, context={"request": request}
-        )
+        serializer = SubscriptionSerializer(queryset, many=True, context=context)
         return Response(serializer.data)
 
 

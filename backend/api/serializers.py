@@ -340,6 +340,15 @@ class SubscriptionSerializer(ModelSerializer):
             "recipes_count",
         )
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        recipes_limit = self.context.get('recipes_limit')
+
+        if recipes_limit is not None:
+            representation['recipes'] = representation['recipes'][:int(recipes_limit)]
+
+        return representation
+
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.author).count()
 
