@@ -118,7 +118,9 @@ class RecipeIngredientSerializer(ModelSerializer):
     id = PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     name = CharField(source="ingredient.name", read_only=True)
     ingredient = IngredientSerializer()
-    measurement_unit = CharField(source="ingredient.measurement_unit", read_only=True)
+    measurement_unit = CharField(
+        source="ingredient.measurement_unit", read_only=True
+    )
     amount = IntegerField()
 
     class Meta:
@@ -169,11 +171,22 @@ class RecipeSerializer(ModelSerializer):
 
     def validate(self, data):
         """Метод для валидации данных перед созданием рецепта"""
-        ingredients = self.initial_data.get("ingredients")
+        request = self.context.get("request")
+        ingredients = self.initial_data.get("ingredients", [])
+        tags = self.initial_data.get("tags", [])
+        name = data.get("name")
+        cooking_time = data.get("cooking_time")
+        image = data.get("image")
+        if not request.user.is_authenticated:
+            raise ValidationError({"detail": "Пользователь не авторизован"}, code=401)
         if not ingredients:
-            raise ValidationError(
-                {"ingredients": "В рецепте отсутствуют ингредиенты"}
-            )
+            raise ValidationError({"ingredients": "В рецепте отсутствуют ингредиенты"})
+        if not tags:
+            raise ValidationError({"tags": "В рецепте отсутствуют теги"})
+        
+        # Проверка на пустое поле image
+        if not image:
+            raise ValidationError({"image": "Поле image не может быть пустым"})
 
         ingredient_ids = set()
         for ingredient_item in ingredients:
@@ -181,27 +194,52 @@ class RecipeSerializer(ModelSerializer):
             if ingredient_id in ingredient_ids:
                 raise ValidationError("Ингредиент уже добавлен в рецепт")
 
+            # Проверка на существование ингредиента
+            if not Ingredient.objects.filter(id=ingredient_id).exists():
+                raise ValidationError({"ingredients": f"Ингредиент с id {ingredient_id} не существует"})
+
             amount = ingredient_item.get("amount")
             if not isinstance(amount, (int, float)) or amount <= 0:
-                raise ValidationError("Неправильное количество ингредиента")
-
+                raise ValidationError("Необходимо добавить хотя бы один ингредиент")
             ingredient_ids.add(ingredient_id)
+
+        # Проверка на повторяющиеся теги
+        tag_ids = set()
+        for tag in tags:
+            if tag in tag_ids:
+                raise ValidationError({"tags": "Тег уже добавлен в рецепт"})
+            tag_ids.add(tag)
+
+            # Проверка на существование тега
+            if not Tag.objects.filter(id=tag).exists():
+                raise ValidationError({"tags": f"Тег с id {tag} не существует"})
+
+        if not isinstance(cooking_time, int) or cooking_time <= 0:
+            raise ValidationError("Время приготовления должно быть положительным целым числом")
+
+        user = self.context.get("request").user
+        if Recipe.objects.filter(name=name, author=user).exists():
+            raise ValidationError({"name": "Рецепт с таким именем уже существует"})
 
         return data
 
     def create_ingredients(self, ingredients, recipe):
         """Добавление ингредиентов"""
-        
+
         for ingredient in ingredients:
             amount = ingredient["amount"]
             if RecipeIngredient.objects.filter(
                 recipe=recipe,
-                ingredients=get_object_or_404(RecipeIngredient, id=ingredient["id"]),
+                ingredients=get_object_or_404(
+                    RecipeIngredient, id=ingredient["id"]
+                ),
             ).exists():
                 amount += F("amount")
             RecipeIngredient.objects.update_or_create(
                 recipe=recipe,
-                ingredients=get_object_or_404(RecipeIngredient, id=ingredient["id"]),
+                ingredients=get_object_or_404(
+                    RecipeIngredient, id=ingredient["id"]
+                ),
                 defaults={"amount": amount},
             )
 
@@ -272,6 +310,12 @@ class SubscriptionSerializer(CustomUserSerializer):
         if user == author:
             raise ValidationError("Нельзя подписаться на самого себя")
         return data
+
+    def create(self, validated_data):
+        user = self.context.get("request").user
+        author = validated_data['author']  # Убедитесь, что author передается в validated_data
+        subscription = Subscription.objects.create(user=user, author=author)
+        return subscription
 
     def get_recipes(self, obj):
         """Получение рецептов автора"""

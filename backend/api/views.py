@@ -1,8 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import AllowAny
 from django.http import HttpResponse
 from django.db.models import Sum
-
+from rest_framework.exceptions import AuthenticationFailed
 
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -37,6 +38,7 @@ class CustomUserViewSet(UserViewSet):
     pagination_class = LimitPagePagination
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
+    permission_classes = [AllowAny]
 
     @action(detail=False, permission_classes=[IsOwnerOrReadOnly])
     def subscriptions(self, request):
@@ -67,6 +69,13 @@ class RecipeViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        """Создание нового рецепта"""
+        if not request.user.is_authenticated:
+            raise AuthenticationFailed("Пользователь не авторизован", code=401)
+
+        return super().create(request, *args, **kwargs)
 
     @action(
         methods=["GET"], detail=False, permission_classes=[IsAuthenticated]
@@ -163,13 +172,16 @@ class SubscriptionViewSet(ModelViewSet):
     permission_classes = [IsOwnerOrReadOnly]
 
     def create(self, request, *args, **kwargs):
-        """Создание подписки"""
         user_id = self.kwargs["id"]
         user = get_object_or_404(User, id=user_id)
+
+        # Проверка, существует ли уже подписка
+        if Subscription.objects.filter(user=request.user, author=user).exists():
+            return Response({"detail": "Вы уже подписаны на данного автора."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Создание подписки
         subscribe = Subscription.objects.create(user=request.user, author=user)
-        serializer = SubscriptionSerializer(
-            subscribe, context={"request": request}
-        )
+        serializer = SubscriptionSerializer(subscribe, context={"request": request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
@@ -191,7 +203,7 @@ class SubscriptionViewSet(ModelViewSet):
 
         # Удаляем подписку
         subscription.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"detail": "Подписка успешно удалена."}, status=status.HTTP_204_NO_CONTENT)
 
 
 class ShoppingCartViewSet(ModelViewSet):
