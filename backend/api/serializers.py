@@ -13,6 +13,7 @@ from rest_framework.serializers import (
     PrimaryKeyRelatedField,
     CharField,
     IntegerField,
+    Field,
 )
 from rest_framework.exceptions import ValidationError
 from drf_extra_fields.fields import Base64ImageField
@@ -50,11 +51,10 @@ class CustomUserSerializer(UserSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        """Проверка подписки пользователя"""
         user = self.context.get("request").user
-        if user.is_anonymous:
-            return False
-        return Subscription.objects.filter(user=user, author=obj.id).exists()
+        if user.is_authenticated:
+            return Subscription.objects.filter(user=user, author=obj).exists()
+        return False
 
 
 class CustomCreateUserSerializer(UserCreateSerializer):
@@ -277,20 +277,40 @@ class ShortRecipeSerializer(ModelSerializer):
         read_only_fields = ("id", "name", "image", "cooking_time")
 
 
-class SubscriptionSerializer(CustomUserSerializer):
-    """Сериализатор модели подписки."""
+class RecipeSubscriptionUserField(Field):
+    """Сериализатор для вывода рецептов в подписках."""
 
-    email = ReadOnlyField(source="author.email")
+    def get_attribute(self, instance):
+        return Recipe.objects.filter(author=instance.author)
+
+    def to_representation(self, recipes_list):
+        recipes_data = []
+        for recipes in recipes_list:
+            recipes_data.append(
+                {
+                    "id": recipes.id,
+                    "name": recipes.name,
+                    "image": recipes.image.url if recipes.image else None,
+                    "cooking_time": recipes.cooking_time,
+                }
+            )
+        return recipes_data
+
+
+class SubscriptionSerializer(ModelSerializer):
+    """Сериализатор для подписок."""
+
+    recipes = RecipeSubscriptionUserField()
+    recipes_count = SerializerMethodField(read_only=True)
     id = ReadOnlyField(source="author.id")
+    email = ReadOnlyField(source="author.email")
     username = ReadOnlyField(source="author.username")
     first_name = ReadOnlyField(source="author.first_name")
     last_name = ReadOnlyField(source="author.last_name")
     is_subscribed = SerializerMethodField()
-    recipe = SerializerMethodField()
-    recipe_count = SerializerMethodField()
 
     class Meta:
-        model = Subscription
+        model = User
         fields = (
             "email",
             "id",
@@ -298,37 +318,17 @@ class SubscriptionSerializer(CustomUserSerializer):
             "first_name",
             "last_name",
             "is_subscribed",
-            "recipe",
-            "recipe_count",
+            "recipes",
+            "recipes_count",
         )
 
-    def validate(self, data):
-        author = self.instance
-        user = self.context.get("request").user
-        if Subscription.objects.filter(user=user, author=author).exists():
-            raise ValidationError("Вы уже подписаны на данного автора")
-        if user == author:
-            raise ValidationError("Нельзя подписаться на самого себя")
-        return data
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(author=obj.author).count()
 
-    def create(self, validated_data):
-        user = self.context.get("request").user
-        author = validated_data['author']  # Убедитесь, что author передается в validated_data
-        subscription = Subscription.objects.create(user=user, author=author)
-        return subscription
-
-    def get_recipes(self, obj):
-        """Получение рецептов автора"""
-        author = self.instance
-        request = self.context.get("request")
-        limit = request.GET.get("recipe_limit")
-        queryset = Recipe.objects.filter(author=author)
-        if limit:
-            queryset = queryset[: int(limit)]
-        return ShortRecipeSerializer(queryset, many=True).data
-
-    def get_recipe_count(self, obj):
-        return obj.recipe.count()
+    def get_is_subscribed(self, obj):
+        return Subscription.objects.filter(
+            user=obj.user, author=obj.author
+        ).exists()
 
 
 class FavoritesSerializer(ModelSerializer):

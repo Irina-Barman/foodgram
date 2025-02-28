@@ -176,12 +176,17 @@ class SubscriptionViewSet(ModelViewSet):
         user = get_object_or_404(User, id=user_id)
 
         # Проверка, существует ли уже подписка
-        if Subscription.objects.filter(user=request.user, author=user).exists():
-            return Response({"detail": "Вы уже подписаны на данного автора."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Создание подписки
+        if Subscription.objects.filter(
+            user=request.user, author=user
+        ).exists():
+            return Response(
+                {"detail": "Вы уже подписаны на данного автора."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         subscribe = Subscription.objects.create(user=request.user, author=user)
-        serializer = SubscriptionSerializer(subscribe, context={"request": request})
+        serializer = SubscriptionSerializer(
+            subscribe, context={"request": request}
+        )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
@@ -203,7 +208,10 @@ class SubscriptionViewSet(ModelViewSet):
 
         # Удаляем подписку
         subscription.delete()
-        return Response({"detail": "Подписка успешно удалена."}, status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"detail": "Подписка успешно удалена."},
+            status=status.HTTP_204_NO_CONTENT,
+        )
 
 
 class ShoppingCartViewSet(ModelViewSet):
