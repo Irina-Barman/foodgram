@@ -1,14 +1,17 @@
 from django.contrib.auth import get_user_model
-from rest_framework.generics import (RetrieveUpdateDestroyAPIView,
-                                     get_object_or_404)
+from rest_framework.generics import (
+    RetrieveUpdateDestroyAPIView,
+    get_object_or_404,
+)
+from rest_framework import filters, status
+
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import AllowAny
 from django.http import HttpResponse
 from django.db.models import Sum
 from rest_framework.exceptions import AuthenticationFailed
-import base64
-from django.core.files.base import ContentFile
+from rest_framework.generics import ValidationError
 
-from rest_framework import status
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -103,14 +106,13 @@ class CustomUserViewSet(UserViewSet):
 
 
 class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
+    "Вьюсет аватара"
     serializer_class = AvatarSerializer
 
     def get_object(self):
-        # Get the User object for the currently authenticated user
         return get_object_or_404(User, pk=self.request.user.id)
 
     def patch(self, request, *args, **kwargs):
-        # Allow partial updates with the PATCH method
         user = self.get_object()
         serializer = self.get_serializer(user, data=request.data, partial=True)
 
@@ -118,7 +120,7 @@ class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
             serializer.save()
             raise ValidationError(serializer.errors)
         return Response(
-            {"status": "Avatar updated"}, status=status.HTTP_200_OK
+            {"status": "Аватар обновлен"}, status=status.HTTP_200_OK
         )
 
     def delete(self, request, *args, **kwargs):
@@ -131,14 +133,16 @@ class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
             return Response(e, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class RecipeViewSet(ModelViewSet):
     """Вьюсет для модели рецепта."""
 
     serializer_class = RecipeSerializer
     queryset = Recipe.objects.all()
     pagination_class = LimitPagePagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = RecipeFilter
+    filterset_fields = ["author", "tags",
+                        "is_favorited", "is_in_shopping_cart"]
     permission_classes = [IsOwnerOrReadOnly]
 
     def perform_create(self, serializer):
