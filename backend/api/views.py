@@ -1,9 +1,12 @@
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
+from rest_framework.generics import (RetrieveUpdateDestroyAPIView,
+                                     get_object_or_404)
 from rest_framework.permissions import AllowAny
 from django.http import HttpResponse
 from django.db.models import Sum
 from rest_framework.exceptions import AuthenticationFailed
+import base64
+from django.core.files.base import ContentFile
 
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -16,6 +19,7 @@ from .filters import IngredientSearchFilter, RecipeFilter
 from recipes.models import Tag, Recipe, Ingredient, Favorites, ShoppingCart
 from users.models import Subscription
 from .serializers import (
+    AvatarSerializer,
     TagSerializer,
     ShoppingCartSerializer,
     IngredientSerializer,
@@ -40,7 +44,11 @@ class CustomUserViewSet(UserViewSet):
     serializer_class = CustomUserSerializer
     permission_classes = [AllowAny]
 
-    @action(detail=False, methods=["get", "patch"], permission_classes=[IsAuthenticated])
+    @action(
+        detail=False,
+        methods=["get", "patch"],
+        permission_classes=[IsAuthenticated],
+    )
     def me(self, request):
         """Получение и обновление информации о текущем пользователе."""
         if request.method == "PATCH":
@@ -48,13 +56,15 @@ class CustomUserViewSet(UserViewSet):
                 request.user,
                 data=request.data,
                 partial=True,
-                context={"request": request},  # Передаем контекст с request
+                context={"request": request},
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        serializer = self.serializer_class(request.user, context={"request": request})  # Передаем контекст
+        serializer = self.serializer_class(
+            request.user, context={"request": request}
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, permission_classes=[IsOwnerOrReadOnly])
@@ -72,17 +82,55 @@ class CustomUserViewSet(UserViewSet):
                     status=400,
                 )
 
-        # Передаем recipes_limit в контекст сериализатора
-        context = {"recipes_limit": recipes_limit} if recipes_limit is not None else {}
+        context = (
+            {"recipes_limit": recipes_limit}
+            if recipes_limit is not None
+            else {}
+        )
 
         page = self.paginate_queryset(queryset)
 
         if page is not None:
-            serializer = SubscriptionSerializer(page, many=True, context=context)
+            serializer = SubscriptionSerializer(
+                page, many=True, context=context
+            )
             return self.get_paginated_response(serializer.data)
 
-        serializer = SubscriptionSerializer(queryset, many=True, context=context)
+        serializer = SubscriptionSerializer(
+            queryset, many=True, context=context
+        )
         return Response(serializer.data)
+
+
+class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
+    serializer_class = AvatarSerializer
+
+    def get_object(self):
+        # Get the User object for the currently authenticated user
+        return get_object_or_404(User, pk=self.request.user.id)
+
+    def patch(self, request, *args, **kwargs):
+        # Allow partial updates with the PATCH method
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+
+        if not serializer.is_valid():
+            serializer.save()
+            raise ValidationError(serializer.errors)
+        return Response(
+            {"status": "Avatar updated"}, status=status.HTTP_200_OK
+        )
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            user = get_object_or_404(User, pk=self.request.user.id)
+            user.avatar.delete(save=False)
+            user.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response(e, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class RecipeViewSet(ModelViewSet):
     """Вьюсет для модели рецепта."""

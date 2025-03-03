@@ -1,4 +1,6 @@
 from django.urls import path, re_path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 
 from .views import (
@@ -9,6 +11,7 @@ from .views import (
     FavoritesViewSet,
     SubscriptionViewSet,
     ShoppingCartViewSet,
+    UserAvatarUpdateView,
 )
 
 app_name = "api"
@@ -35,5 +38,10 @@ urlpatterns = [
         "recipes/<int:id>/shopping_cart/",
         ShoppingCartViewSet.as_view({"post": "create", "delete": "delete"}),
         name="shopping_cart",
+    ),
+    path(
+        'users/me/avatar/',
+        UserAvatarUpdateView.as_view(),
+        name='user_avatar_update'
     ),
 ]

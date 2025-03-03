@@ -282,6 +282,21 @@ class RecipeSerializer(ModelSerializer):
         return super().update(recipe, validated_data)
 
 
+class AvatarSerializer(ModelSerializer):
+    "Сереализатор аватара"
+
+    avatar = Base64ImageField(required=True, allow_null=True)
+
+    class Meta:
+        model = User
+        fields = ("avatar",)
+
+    def update(self, instance, validated_data):
+        instance.avatar = validated_data.get("avatar", instance.avatar)
+        instance.save()
+        return instance
+
+
 class ShortRecipeSerializer(ModelSerializer):
     """Сериализатор сокращенного отображения рецепта."""
 
@@ -318,12 +333,12 @@ class SubscriptionSerializer(ModelSerializer):
 
     recipes = RecipeSubscriptionUserField()
     recipes_count = SerializerMethodField(read_only=True)
-    avatar = Base64ImageField(source="author.avatar")
     id = ReadOnlyField(source="author.id")
     email = ReadOnlyField(source="author.email")
     username = ReadOnlyField(source="author.username")
     first_name = ReadOnlyField(source="author.first_name")
     last_name = ReadOnlyField(source="author.last_name")
+    avatar = SerializerMethodField()  # аватар
     is_subscribed = SerializerMethodField()
 
     class Meta:
@@ -338,19 +353,42 @@ class SubscriptionSerializer(ModelSerializer):
             "is_subscribed",
             "recipes",
             "recipes_count",
+            "avatar",  # аватар
         )
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        recipes_limit = self.context.get('recipes_limit')
+        recipes_limit = self.context.get("recipes_limit")
 
         if recipes_limit is not None:
-            representation['recipes'] = representation['recipes'][:int(recipes_limit)]
+            representation["recipes"] = representation["recipes"][
+                : int(recipes_limit)
+            ]
 
         return representation
 
+    def get_recipes(self, obj):
+        recipes = obj.avtor.recipes.all()
+        limit = self.context["request"].query_params.get("recipes_limit", None)
+        if limit:
+            recipes = recipes[: int(limit)]
+        return [
+            {
+                "id": recipe.id,
+                "name": recipe.name,
+                "image": recipe.image.url,
+                "cooking_time": recipe.cooking_time,
+            }
+            for recipe in recipes
+        ]
+
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.author).count()
+
+    def get_avatar(self, obj):
+        if obj.author.avatar:
+            return obj.author.avatar.url
+        return None
 
     def get_is_subscribed(self, obj):
         return Subscription.objects.filter(
