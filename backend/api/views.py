@@ -40,6 +40,23 @@ class CustomUserViewSet(UserViewSet):
     serializer_class = CustomUserSerializer
     permission_classes = [AllowAny]
 
+    @action(detail=False, methods=["get", "patch"], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        """Получение и обновление информации о текущем пользователе."""
+        if request.method == "PATCH":
+            serializer = self.serializer_class(
+                request.user,
+                data=request.data,
+                partial=True,
+                context={"request": request},  # Передаем контекст с request
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        serializer = self.serializer_class(request.user, context={"request": request})  # Передаем контекст
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=False, permission_classes=[IsOwnerOrReadOnly])
     def subscriptions(self, request):
         """Просмотр подписок пользователя"""
@@ -50,10 +67,13 @@ class CustomUserViewSet(UserViewSet):
             try:
                 recipes_limit = int(recipes_limit)
             except ValueError:
-                return Response({"error": "Некорректное значение для recipes_limit"}, status=400)
+                return Response(
+                    {"error": "Некорректное значение для recipes_limit"},
+                    status=400,
+                )
 
         # Передаем recipes_limit в контекст сериализатора
-        context = {'recipes_limit': recipes_limit} if recipes_limit is not None else {}
+        context = {"recipes_limit": recipes_limit} if recipes_limit is not None else {}
 
         page = self.paginate_queryset(queryset)
 
@@ -63,7 +83,6 @@ class CustomUserViewSet(UserViewSet):
 
         serializer = SubscriptionSerializer(queryset, many=True, context=context)
         return Response(serializer.data)
-
 
 class RecipeViewSet(ModelViewSet):
     """Вьюсет для модели рецепта."""
