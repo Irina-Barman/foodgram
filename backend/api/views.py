@@ -107,6 +107,7 @@ class CustomUserViewSet(UserViewSet):
 
 class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
     "Вьюсет аватара"
+
     serializer_class = AvatarSerializer
 
     def get_object(self):
@@ -141,8 +142,12 @@ class RecipeViewSet(ModelViewSet):
     pagination_class = LimitPagePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = RecipeFilter
-    filterset_fields = ["author", "tags",
-                        "is_favorited", "is_in_shopping_cart"]
+    filterset_fields = [
+        "author",
+        "tags",
+        "is_favorited",
+        "is_in_shopping_cart",
+    ]
     permission_classes = [IsOwnerOrReadOnly]
 
     def perform_create(self, serializer):
@@ -195,7 +200,6 @@ class FavoritesViewSet(ModelViewSet):
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
 
-        # Проверка на существование
         if Favorites.objects.filter(user=request.user, recipe=recipe).exists():
             return Response(
                 {"detail": "Recipe is already in favorites."},
@@ -249,22 +253,31 @@ class SubscriptionViewSet(ModelViewSet):
     pagination_class = LimitPagePagination
     permission_classes = [IsOwnerOrReadOnly]
 
-    def create(self, request, *args, **kwargs):
-        # Проверка авторизации
-        if not request.user.is_authenticated:
-            raise AuthenticationFailed("Пользователь не авторизован.", code=401)
-
-        user_id = self.kwargs["id"]
-        user = get_object_or_404(User, id=user_id)
-        
-        if request.user.id == user.id:
-            return Response(
-                {"detail": "Нельзя подписаться на самого себя."},
-                status=status.HTTP_400_BAD_REQUEST,
+    def validate_subscription(self, user, author):
+        """Проверка валидности подписки"""
+        if not user.is_authenticated:
+            raise AuthenticationFailed(
+                "Пользователь не авторизован.", code=401
             )
 
-        # Проверка, существует ли уже подписка
-        if Subscription.objects.filter(user=request.user, author=user).exists():
+        if user.id == author.id:
+            return {
+                "detail": "Нельзя подписаться на самого себя."
+            }, status.HTTP_400_BAD_REQUEST
+
+        return None
+
+    def create(self, request, *args, **kwargs):
+        user_id = self.kwargs["id"]
+        author = get_object_or_404(User, id=user_id)
+        validation_response = self.validate_subscription(request.user, author)
+
+        if validation_response:
+            return Response(*validation_response)
+
+        if Subscription.objects.filter(
+            user=request.user, author=author
+        ).exists():
             return Response(
                 {"detail": "Вы уже подписаны на данного автора."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -282,39 +295,38 @@ class SubscriptionViewSet(ModelViewSet):
                     status=400,
                 )
 
-        # Создание новой подписки
-        subscribe = Subscription.objects.create(user=request.user, author=user)
-        
-        # Передаем контекст с лимитом в сериализатор
-        serializer = SubscriptionSerializer(subscribe, context={"request": request, "recipes_limit": recipes_limit})
-        
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        subscribe = Subscription.objects.create(
+            user=request.user, author=author
+        )
 
+        # Передаем контекст с лимитом в сериализатор
+        serializer = SubscriptionSerializer(
+            subscribe,
+            context={"request": request, "recipes_limit": recipes_limit},
+        )
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
         """Удаление подписки"""
-        if not request.user.is_authenticated:
-            raise AuthenticationFailed("Пользователь не авторизован.", code=401)
-        
         author_id = self.kwargs["id"]
-        user_id = request.user.id
-
-        # Проверяем, существует ли автор
         author = get_object_or_404(User, id=author_id)
+        validation_response = self.validate_subscription(request.user, author)
 
-        # Пытаемся найти подписку
-        subscription = Subscription.objects.filter(user=request.user, author=author).first()
+        if validation_response:
+            return Response(*validation_response)
+        subscription = Subscription.objects.filter(
+            user=request.user, author=author
+        ).first()
 
-        # Если подписка не найдена, возвращаем 404
         if not subscription:
-            raise NotFound("Подписка не найдена.")
-
-        # Удаляем подписку
+            return Response(
+                {"detail": "Подписка не найдена."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         subscription.delete()
-        
         return Response(
-            {"detail": "Подписка успешно удалена."},
-            status=status.HTTP_204_NO_CONTENT,
+            {"detail": "Подписка удалена."}, status=status.HTTP_204_NO_CONTENT
         )
 
 
@@ -335,7 +347,6 @@ class ShoppingCartViewSet(ModelViewSet):
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
 
-        # Проверка на существование
         if ShoppingCart.objects.filter(
             user=request.user, recipe=recipe
         ).exists():
