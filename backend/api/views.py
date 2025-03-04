@@ -9,7 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import AllowAny
 from django.http import HttpResponse
 from django.db.models import Sum
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, NotFound
 from rest_framework.generics import ValidationError
 
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -250,42 +250,68 @@ class SubscriptionViewSet(ModelViewSet):
     permission_classes = [IsOwnerOrReadOnly]
 
     def create(self, request, *args, **kwargs):
+        # Проверка авторизации
+        if not request.user.is_authenticated:
+            raise AuthenticationFailed("Пользователь не авторизован.", code=401)
+
         user_id = self.kwargs["id"]
         user = get_object_or_404(User, id=user_id)
+        
+        if request.user.id == user.id:
+            return Response(
+                {"detail": "Нельзя подписаться на самого себя."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Проверка, существует ли уже подписка
-        if Subscription.objects.filter(
-            user=request.user, author=user
-        ).exists():
+        if Subscription.objects.filter(user=request.user, author=user).exists():
             return Response(
                 {"detail": "Вы уже подписаны на данного автора."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Получаем лимит рецептов из запроса
+        recipes_limit = request.query_params.get("recipes_limit", None)
+
+        if recipes_limit is not None:
+            try:
+                recipes_limit = int(recipes_limit)
+            except ValueError:
+                return Response(
+                    {"error": "Некорректное значение для recipes_limit"},
+                    status=400,
+                )
+
+        # Создание новой подписки
         subscribe = Subscription.objects.create(user=request.user, author=user)
-        serializer = SubscriptionSerializer(
-            subscribe, context={"request": request}
-        )
+        
+        # Передаем контекст с лимитом в сериализатор
+        serializer = SubscriptionSerializer(subscribe, context={"request": request, "recipes_limit": recipes_limit})
+        
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
     def delete(self, request, *args, **kwargs):
         """Удаление подписки"""
+        if not request.user.is_authenticated:
+            raise AuthenticationFailed("Пользователь не авторизован.", code=401)
+        
         author_id = self.kwargs["id"]
         user_id = request.user.id
 
+        # Проверяем, существует ли автор
+        author = get_object_or_404(User, id=author_id)
+
         # Пытаемся найти подписку
-        subscription = Subscription.objects.filter(
-            user_id=user_id, author_id=author_id
-        ).first()
+        subscription = Subscription.objects.filter(user=request.user, author=author).first()
 
         # Если подписка не найдена, возвращаем 404
         if not subscription:
-            return Response(
-                {"detail": "Подписки не обнаружено."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("Подписка не найдена.")
 
         # Удаляем подписку
         subscription.delete()
+        
         return Response(
             {"detail": "Подписка успешно удалена."},
             status=status.HTTP_204_NO_CONTENT,
