@@ -12,6 +12,7 @@ from .views import (
     SubscriptionViewSet,
     ShoppingCartViewSet,
     UserAvatarUpdateView,
+    ShortLinkView,
 )
 
 app_name = "api"
@@ -30,6 +31,9 @@ urlpatterns = [
         name="favorite",
     ),
     path(
+        "recipes/<str:id>/get-link/", ShortLinkView.as_view(), name="get-link"
+    ),
+    path(
         "users/<int:id>/subscribe/",
         SubscriptionViewSet.as_view({"post": "create", "delete": "delete"}),
         name="subscribe",
@@ -40,8 +44,8 @@ urlpatterns = [
         name="shopping_cart",
     ),
     path(
-        'users/me/avatar/',
+        "users/me/avatar/",
         UserAvatarUpdateView.as_view(),
-        name='user_avatar_update'
+        name="user_avatar_update",
     ),
 ]

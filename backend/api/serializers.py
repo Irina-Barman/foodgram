@@ -297,17 +297,6 @@ class AvatarSerializer(ModelSerializer):
         return instance
 
 
-class ShortRecipeSerializer(ModelSerializer):
-    """Сериализатор сокращенного отображения рецепта."""
-
-    image = Base64ImageField()
-
-    class Meta:
-        model = Recipe
-        fields = ("id", "name", "image", "cooking_time")
-        read_only_fields = ("id", "name", "image", "cooking_time")
-
-
 class RecipeSubscriptionUserField(Field):
     """Сериализатор для вывода рецептов в подписках."""
 

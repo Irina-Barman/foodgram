@@ -4,6 +4,7 @@ from rest_framework.generics import (
     get_object_or_404,
 )
 from rest_framework import filters, status
+from rest_framework.views import APIView
 
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import AllowAny
@@ -37,6 +38,18 @@ from .permissions import IsOwnerOrReadOnly
 
 
 User = get_user_model()
+
+
+class ShortLinkView(APIView):
+    def get(self, request, id):
+        recipe = get_object_or_404(Recipe, id=id)
+
+        # Генерация короткой ссылки
+        base_url = request.build_absolute_uri("/")  # Получаем базовый URL
+        short_link = (
+            f"{base_url}recipes/{recipe.id}/"  # Создание полной ссылки
+        )
+        return Response({"short-link": short_link}, status=status.HTTP_200_OK)
 
 
 class CustomUserViewSet(UserViewSet):
