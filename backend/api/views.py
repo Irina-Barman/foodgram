@@ -84,7 +84,6 @@ class CustomUserViewSet(UserViewSet):
                     {"error": "Некорректное значение для recipes_limit"},
                     status=400,
                 )
-
         context = (
             {"recipes_limit": recipes_limit}
             if recipes_limit is not None
@@ -209,23 +208,20 @@ class FavoritesViewSet(ModelViewSet):
         Favorites.objects.create(user=request.user, recipe=recipe)
         serializer = FavoritesSerializer(recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
     def delete(self, request, *args, **kwargs):
         """Удаление рецепта из списка избранного"""
         recipe_id = self.kwargs["id"]
         user_id = request.user.id
-        
-        # Проверка, существует ли рецепт
         recipe = get_object_or_404(Recipe, id=recipe_id)
-
-        # Проверка, существует ли рецепт в списке избранного
-        favorite = Favorites.objects.filter(user__id=user_id, recipe=recipe).first()
+        favorite = Favorites.objects.filter(
+            user__id=user_id, recipe=recipe
+        ).first()
         if not favorite:
             return Response(
                 {"detail": "Избранный рецепт не найден."},
-                status=status.HTTP_400_BAD_REQUEST,  # Изменен статус на 404
+                status=status.HTTP_400_BAD_REQUEST,
             )
-
         favorite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -284,8 +280,6 @@ class SubscriptionViewSet(ModelViewSet):
                 {"detail": "Вы уже подписаны на данного автора."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # Получаем лимит рецептов из запроса
         recipes_limit = request.query_params.get("recipes_limit", None)
 
         if recipes_limit is not None:
@@ -300,8 +294,6 @@ class SubscriptionViewSet(ModelViewSet):
         subscribe = Subscription.objects.create(
             user=request.user, author=author
         )
-
-        # Передаем контекст с лимитом в сериализатор
         serializer = SubscriptionSerializer(
             subscribe,
             context={"request": request, "recipes_limit": recipes_limit},
@@ -364,20 +356,16 @@ class ShoppingCartViewSet(ModelViewSet):
     def delete(self, request, *args, **kwargs):
         """Удаление рецепта из списка покупок"""
         recipe_id = self.kwargs["id"]
-        
-        # Проверка, существует ли рецепт
         recipe = get_object_or_404(Recipe, id=recipe_id)
-        
         user_id = request.user.id
-        
-        # Проверка, существует ли рецепт в списке покупок
-        shopping_cart_item = ShoppingCart.objects.filter(user__id=user_id, recipe=recipe).first()
+
+        shopping_cart_item = ShoppingCart.objects.filter(
+            user__id=user_id, recipe=recipe
+        ).first()
         if not shopping_cart_item:
             return Response(
                 {"detail": "Рецепт не найден в списке покупок."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # Удаляем рецепт из списка покупок
         shopping_cart_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
