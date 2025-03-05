@@ -202,26 +202,28 @@ class FavoritesViewSet(ModelViewSet):
 
         if Favorites.objects.filter(user=request.user, recipe=recipe).exists():
             return Response(
-                {"detail": "Recipe is already in favorites."},
+                {"detail": "Рецепт уже в избранном."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         Favorites.objects.create(user=request.user, recipe=recipe)
         serializer = FavoritesSerializer(recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+    
     def delete(self, request, *args, **kwargs):
         """Удаление рецепта из списка избранного"""
         recipe_id = self.kwargs["id"]
         user_id = request.user.id
-        favorite = Favorites.objects.filter(
-            user__id=user_id, recipe__id=recipe_id
-        ).first()
+        
+        # Проверка, существует ли рецепт
+        recipe = get_object_or_404(Recipe, id=recipe_id)
 
+        # Проверка, существует ли рецепт в списке избранного
+        favorite = Favorites.objects.filter(user__id=user_id, recipe=recipe).first()
         if not favorite:
             return Response(
-                {"detail": "Favorite recipe not found."},
-                status=status.HTTP_404_NOT_FOUND,
+                {"detail": "Избранный рецепт не найден."},
+                status=status.HTTP_400_BAD_REQUEST,  # Изменен статус на 404
             )
 
         favorite.delete()
@@ -351,7 +353,7 @@ class ShoppingCartViewSet(ModelViewSet):
             user=request.user, recipe=recipe
         ).exists():
             return Response(
-                {"detail": "Recipe is already in shopping cart."},
+                {"detail": "Рецепт уже в корзине."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -360,12 +362,22 @@ class ShoppingCartViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
-        """Удаление рецепта из
-        списка покупок
-        """
+        """Удаление рецепта из списка покупок"""
         recipe_id = self.kwargs["id"]
+        
+        # Проверка, существует ли рецепт
+        recipe = get_object_or_404(Recipe, id=recipe_id)
+        
         user_id = request.user.id
-        ShoppingCart.objects.filter(
-            user__id=user_id, recipe__id=recipe_id
-        ).delete()
+        
+        # Проверка, существует ли рецепт в списке покупок
+        shopping_cart_item = ShoppingCart.objects.filter(user__id=user_id, recipe=recipe).first()
+        if not shopping_cart_item:
+            return Response(
+                {"detail": "Рецепт не найден в списке покупок."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Удаляем рецепт из списка покупок
+        shopping_cart_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
