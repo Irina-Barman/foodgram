@@ -1,17 +1,16 @@
+import csv
+from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
     get_object_or_404,
 )
-from io import StringIO
 from rest_framework import filters, status
 from rest_framework.views import APIView
 
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import AllowAny
-from django.http import HttpResponse
-from django.db.models import Sum
-from rest_framework.exceptions import AuthenticationFailed, NotFound
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.generics import ValidationError
 
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -30,7 +29,6 @@ from .serializers import (
     IngredientSerializer,
     SubscriptionSerializer,
     RecipeSerializer,
-    RecipeIngredient,
     FavoritesSerializer,
     CustomUserSerializer,
 )
@@ -172,6 +170,41 @@ class RecipeViewSet(ModelViewSet):
             raise AuthenticationFailed("Пользователь не авторизован", code=401)
 
         return super().create(request, *args, **kwargs)
+    
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def download_shopping_cart(self, request):
+        """Скачивание списка покупок с суммированием ингредиентов."""
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Пользователь не авторизован."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # Получаем все рецепты из списка покупок текущего пользователя
+        shopping_cart_items = ShoppingCart.objects.filter(user=request.user)
+
+        # Словарь для хранения ингредиентов и их количеств
+        ingredients_dict = {}
+
+        for item in shopping_cart_items:
+            recipe = item.recipe
+            for ingredient in recipe.ingredients.all():
+                if ingredient.name in ingredients_dict:
+                    ingredients_dict[ingredient.name] += ingredient.amount
+                else:
+                    ingredients_dict[ingredient.name] = ingredient.amount
+
+        # Создаем HTTP ответ с заголовками для скачивания
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="shopping_cart.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Ingredient', 'Total Amount'])  # Заголовки столбцов
+
+        for ingredient_name, total_amount in ingredients_dict.items():
+            writer.writerow([ingredient_name, total_amount])  # Записываем данные об ингредиентах и их суммарном количестве
+
+        return response
 
 
 class FavoritesViewSet(ModelViewSet):
@@ -345,7 +378,6 @@ class ShoppingCartViewSet(ModelViewSet):
 
     def delete(self, request, *args, **kwargs):
         """Удаление рецепта из списка покупок"""
-        print("Метод download_shopping_cart вызван")
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
         user_id = request.user.id
@@ -360,5 +392,3 @@ class ShoppingCartViewSet(ModelViewSet):
             )
         shopping_cart_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    
