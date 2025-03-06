@@ -20,6 +20,7 @@ class UserAdmin(admin.ModelAdmin):
 
 
 class SubscriptionAdmin(admin.ModelAdmin):
+    """Класс для представления модели подписок в админ-зоне."""
     list_display = ("user", "author", "id")
     search_fields = ("user__username", "author__username")
     list_filter = ("id",)

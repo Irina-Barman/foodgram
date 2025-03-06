@@ -1,27 +1,27 @@
 import csv
-from django.http import HttpResponse
+
 from django.contrib.auth import get_user_model
+from django.http import HttpResponse
+
+from django_filters.rest_framework import DjangoFilterBackend
+
+from rest_framework import filters, status
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError, AuthenticationFailed
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
     get_object_or_404,
 )
-from rest_framework import filters, status
-from rest_framework.views import APIView
-
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.permissions import AllowAny
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework.generics import ValidationError
-
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+
 from djoser.views import UserViewSet
 
 from .filters import IngredientSearchFilter, RecipeFilter
-from recipes.models import Tag, Recipe, Ingredient, Favorites, ShoppingCart
-from users.models import Subscription
+from .pagination import LimitPagePagination
+from .permissions import IsOwnerOrReadOnly
 from .serializers import (
     AvatarSerializer,
     TagSerializer,
@@ -32,18 +32,17 @@ from .serializers import (
     FavoritesSerializer,
     CustomUserSerializer,
 )
-from .pagination import LimitPagePagination
-from .permissions import IsOwnerOrReadOnly
+from recipes.models import Tag, Recipe, Ingredient, Favorites, ShoppingCart
+from users.models import Subscription
 
 
 User = get_user_model()
 
 
 class ShortLinkView(APIView):
+    """Вьюсет для генерации короткой ссылки на рецепт."""
     def get(self, request, id):
         recipe = get_object_or_404(Recipe, id=id)
-
-        # Генерация короткой ссылки
         base_url = request.build_absolute_uri("/")  # Получаем базовый URL
         short_link = (
             f"{base_url}recipes/{recipe.id}/"  # Создание полной ссылки
@@ -53,7 +52,6 @@ class ShortLinkView(APIView):
 
 class CustomUserViewSet(UserViewSet):
     """Вьюсет для модели пользователя."""
-
     pagination_class = LimitPagePagination
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
@@ -65,7 +63,7 @@ class CustomUserViewSet(UserViewSet):
         permission_classes=[IsAuthenticated],
     )
     def me(self, request):
-        """Получение и обновление информации о текущем пользователе."""
+        """Получает и обновляет информацию о текущем пользователе."""
         if request.method == "PATCH":
             serializer = self.serializer_class(
                 request.user,
@@ -84,7 +82,7 @@ class CustomUserViewSet(UserViewSet):
 
     @action(detail=False, permission_classes=[IsOwnerOrReadOnly])
     def subscriptions(self, request):
-        """Просмотр подписок пользователя"""
+        """Возвращает список подписок текущего пользователя."""
         queryset = self.request.user.subscriptions.all()
         recipes_limit = request.query_params.get("recipes_limit", None)
 
@@ -117,17 +115,17 @@ class CustomUserViewSet(UserViewSet):
 
 
 class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
-    "Вьюсет аватара"
-
+    """Вьюсет аватара пользователя."""
     serializer_class = AvatarSerializer
 
     def get_object(self):
+        """Получает текущего пользователя."""
         return get_object_or_404(User, pk=self.request.user.id)
 
     def patch(self, request, *args, **kwargs):
+        """Обновляет аватар пользователя."""
         user = self.get_object()
         serializer = self.get_serializer(user, data=request.data, partial=True)
-
         if not serializer.is_valid():
             serializer.save()
             raise ValidationError(serializer.errors)
@@ -136,6 +134,7 @@ class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
         )
 
     def delete(self, request, *args, **kwargs):
+        """Удаляет аватар пользователя."""
         try:
             user = get_object_or_404(User, pk=self.request.user.id)
             user.avatar.delete(save=False)
@@ -147,7 +146,6 @@ class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
 
 class RecipeViewSet(ModelViewSet):
     """Вьюсет для модели рецепта."""
-
     serializer_class = RecipeSerializer
     queryset = Recipe.objects.all()
     pagination_class = LimitPagePagination
@@ -162,30 +160,29 @@ class RecipeViewSet(ModelViewSet):
     permission_classes = [IsOwnerOrReadOnly]
 
     def perform_create(self, serializer):
+        """Сохраняет рецепт с автором текущего пользователя."""
         serializer.save(author=self.request.user)
 
     def create(self, request, *args, **kwargs):
-        """Создание нового рецепта"""
+        """Создает новый рецепт, проверяя авторизацию пользователя."""
         if not request.user.is_authenticated:
             raise AuthenticationFailed("Пользователь не авторизован", code=401)
 
         return super().create(request, *args, **kwargs)
-    
-    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+
+    @action(
+        detail=False, methods=["get"], permission_classes=[IsAuthenticated]
+    )
     def download_shopping_cart(self, request):
-        """Скачивание списка покупок с суммированием ингредиентов."""
+        """Скачивает список покупок с суммированием ингредиентов."""
         if not request.user.is_authenticated:
             return Response(
                 {"detail": "Пользователь не авторизован."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-
-        # Получаем все рецепты из списка покупок текущего пользователя
         shopping_cart_items = ShoppingCart.objects.filter(user=request.user)
-
         # Словарь для хранения ингредиентов и их количеств
         ingredients_dict = {}
-
         for item in shopping_cart_items:
             recipe = item.recipe
             for ingredient in recipe.ingredients.all():
@@ -194,31 +191,27 @@ class RecipeViewSet(ModelViewSet):
                 else:
                     ingredients_dict[ingredient.name] = ingredient.amount
 
-        # Создаем HTTP ответ с заголовками для скачивания
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.csv"'
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = (
+            'attachment; filename="shopping_cart.csv"'
+        )
 
         writer = csv.writer(response)
-        writer.writerow(['Ingredient', 'Total Amount'])  # Заголовки столбцов
+        writer.writerow(["Ingredient", "Total Amount"])
 
         for ingredient_name, total_amount in ingredients_dict.items():
-            writer.writerow([ingredient_name, total_amount])  # Записываем данные об ингредиентах и их суммарном количестве
-
+            writer.writerow([ingredient_name, total_amount])
         return response
 
 
 class FavoritesViewSet(ModelViewSet):
-    """ViewSet Списки избранных рецептов
-    Добавление /
-    удаление из списка
-    """
-
+    """Вьюсет списка избранных рецептов."""
     serializer_class = FavoritesSerializer
     queryset = Favorites.objects.all()
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        """Добавление рецепта в список избранного"""
+        """Добавляет рецепт в список избранного."""
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
 
@@ -233,7 +226,7 @@ class FavoritesViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
-        """Удаление рецепта из списка избранного"""
+        """Удаляет рецепт из списка избранного."""
         recipe_id = self.kwargs["id"]
         user_id = request.user.id
         recipe = get_object_or_404(Recipe, id=recipe_id)
@@ -251,7 +244,6 @@ class FavoritesViewSet(ModelViewSet):
 
 class TagViewSet(ReadOnlyModelViewSet):
     """Вьюсет для модели тега."""
-
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (IsOwnerOrReadOnly,)
@@ -259,7 +251,6 @@ class TagViewSet(ReadOnlyModelViewSet):
 
 class IngredientViewSet(ReadOnlyModelViewSet):
     """Вьюсет для модели ингредиента."""
-
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (IsOwnerOrReadOnly,)
@@ -269,13 +260,12 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 
 class SubscriptionViewSet(ModelViewSet):
     """Вьюсет подписки"""
-
     serializer_class = SubscriptionSerializer
     pagination_class = LimitPagePagination
     permission_classes = [IsOwnerOrReadOnly]
-
+    
     def validate_subscription(self, user, author):
-        """Проверка валидности подписки"""
+        """Проверяет валидность подписки"""
         if not user.is_authenticated:
             raise AuthenticationFailed(
                 "Пользователь не авторизован.", code=401
@@ -289,6 +279,7 @@ class SubscriptionViewSet(ModelViewSet):
         return None
 
     def create(self, request, *args, **kwargs):
+        """Создает новую подписку на автора."""
         user_id = self.kwargs["id"]
         author = get_object_or_404(User, id=user_id)
         validation_response = self.validate_subscription(request.user, author)
@@ -325,7 +316,7 @@ class SubscriptionViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
-        """Удаление подписки"""
+        """Удаляет подписку на автора."""
         author_id = self.kwargs["id"]
         author = get_object_or_404(User, id=author_id)
         validation_response = self.validate_subscription(request.user, author)
@@ -348,11 +339,7 @@ class SubscriptionViewSet(ModelViewSet):
 
 
 class ShoppingCartViewSet(ModelViewSet):
-    """ViewSet Список покупок
-    Добавление рецепта в список покупок /
-    удаление рецепта из списка покупок /
-    скачивание списка покупок
-    """
+    """Вьюсет списка покупок."""
 
     serializer_class = ShoppingCartSerializer
     pagination_class = LimitPagePagination
@@ -360,7 +347,7 @@ class ShoppingCartViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        """Добавление рецепта в список покупок"""
+        """Добавляет рецепт в список покупок."""
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
 
@@ -377,7 +364,7 @@ class ShoppingCartViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
-        """Удаление рецепта из списка покупок"""
+        """Удаляет рецепт из списка покупок."""
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
         user_id = request.user.id

@@ -8,8 +8,7 @@ HELP_TEXT = "Обязательное поле. Максимальное кол�
 
 class CustomUser(AbstractUser):
     """Модель пользователя."""
-
-    REQUIRED_FIELDS = ["id","email", "first_name", "last_name"]
+    REQUIRED_FIELDS = ["id", "email", "first_name", "last_name"]
 
     username = models.CharField(
         max_length=getattr(settings, "MAX_USERNAME_LENGTH", 150),
@@ -60,7 +59,6 @@ class CustomUser(AbstractUser):
 
 class Subscription(models.Model):
     """Модель подписки."""
-
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,

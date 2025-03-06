@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.db.models import Count
 
 from .models import (
     Tag,
@@ -12,10 +11,12 @@ from .models import (
 )
 
 
-
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author',)
-    list_filter = ('name', 'author__username', 'tags__name')
+    list_display = (
+        "name",
+        "author",
+    )
+    list_filter = ("name", "author__username", "tags__name")
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -27,9 +28,11 @@ class IngredientAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "measurement_unit")
     search_fields = ("name",)
 
+
 class RecipeTagAdmin(admin.ModelAdmin):
     list_display = ("recipe", "tag")
     search_fields = ("tag",)
+
 
 class RecipeIngredientAdmin(admin.ModelAdmin):
     list_display = ("id", "recipe", "ingredient", "amount")
