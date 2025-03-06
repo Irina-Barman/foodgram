@@ -3,6 +3,7 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
     get_object_or_404,
 )
+from io import StringIO
 from rest_framework import filters, status
 from rest_framework.views import APIView
 
@@ -171,30 +172,6 @@ class RecipeViewSet(ModelViewSet):
             raise AuthenticationFailed("Пользователь не авторизован", code=401)
 
         return super().create(request, *args, **kwargs)
-
-    @action(
-        methods=["GET"], detail=False, permission_classes=[IsAuthenticated]
-    )
-    def download_shopping_cart(self, request):
-        """Скачивание списка покупок"""
-        ingredients = (
-            RecipeIngredient.objects.filter(
-                recipe__in=request.user.shopping_cart.all()
-            )
-            .values("ingredient__name", "ingredient__measurement_unit")
-            .annotate(total_amount=Sum("amount"))
-        )
-
-        shopping_cart = "\n".join(
-            f"{ingredient['ingredient__name']} - {ingredient['total_amount']} {ingredient['ingredient__measurement_unit']}"
-            for ingredient in ingredients
-        )
-
-        response = HttpResponse(shopping_cart, content_type="text/plain")
-        response["Content-Disposition"] = (
-            'attachment; filename="shoppinglist.txt"'
-        )
-        return response
 
 
 class FavoritesViewSet(ModelViewSet):
@@ -368,6 +345,7 @@ class ShoppingCartViewSet(ModelViewSet):
 
     def delete(self, request, *args, **kwargs):
         """Удаление рецепта из списка покупок"""
+        print("Метод download_shopping_cart вызван")
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
         user_id = request.user.id
@@ -382,3 +360,5 @@ class ShoppingCartViewSet(ModelViewSet):
             )
         shopping_cart_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    

@@ -21,6 +21,8 @@ router_v1.register("tags", TagViewSet)
 router_v1.register("users", CustomUserViewSet)
 router_v1.register("ingredients", IngredientViewSet)
 router_v1.register("recipes", RecipeViewSet)
+router_v1.register("shopping_cart", ShoppingCartViewSet)
+
 urlpatterns = [
     path("", include(router_v1.urls)),
     path("", include("djoser.urls")),
