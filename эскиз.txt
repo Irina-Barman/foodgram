@@ -4,7 +4,7 @@
        --env-file .env \
        -v foodgram_pg_data:/var/lib/postgresql/data \
        postgres:13.10
-    Посмотреть БД docker exec -it foodgram_db psql -U django_user -d db_foodgram
+    Посмотреть БД docker exec -it foodgram_db psql -U django_user -d foodgram_db
 + создать сеть нетворк - docker network create foodgram-network
 + объеденить БД и сеть нетворк  - docker network connect foodgram-network foodgram_db
 + прописать конфиг нджинкс
