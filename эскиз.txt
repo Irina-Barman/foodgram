@@ -1,99 +1,70 @@
-Модели
-- Пользователь Users
-    id 
-    email
-    username
-    first_name
-    last_name
-    password
-    is_subscribed
-    avatar
-    recipes_count
-- Теги Tags
-    id
-    name
-    slug
-- Рецепты Recipes
-    id
-    page
-        
-    *is_favorited
-    *is_in_shopping_cart
-    *author
-    *tags
-    *ingredients
-    image
-    name
-    text
-    cooking_time
-- Список покупок Shopping_cart
-- Избранное Favorite
-    *id_Recipes
-- Подписки Subscriptions
-    id_Users
-    recipes_limit
-- Ингредиенты Ingredients
-    id
-    amount
-    measurement_unit
++ Создать volume БД - docker volume create foodgram_pg_data
++ Запустить PostgreSQL в контейнере 
+    docker run --name foodgram_db \
+       --env-file .env \
+       -v foodgram_pg_data:/var/lib/postgresql/data \
+       postgres:13.10
+    Посмотреть БД docker exec -it foodgram_db psql -U django_user -d db_foodgram
++ создать сеть нетворк - docker network create foodgram-network
++ объеденить БД и сеть нетворк  - docker network connect foodgram-network foodgram_db
++ прописать конфиг нджинкс
+-прописать докер для контейнеров
+-прописать докер для продакшена
+-очистить сервак
+-написать workflow .github/workflows, а в ней — файл main.yml.
 
 
-- Права
-    - Гость (анонимный пользователь)
-        Доступна главная страница.
-        Доступна страница отдельного рецепта.
-        Доступна страница любого пользователя.
-        Доступна и работает форма входа.
-        Доступна и работает форма регистрации.
-    - Аутентифицированный (залогиненный) пользователь
-        Доступна главная страница.
-        Доступна страница другого пользователя.
-        Доступна страница отдельного рецепта.
-        Доступна страница «Мои подписки»:
-            можно подписаться и отписаться на странице рецепта;
-            можно подписаться и отписаться на странице автора;
-            при подписке рецепты автора добавляются на страницу «Мои подписки» и удаляются оттуда при отказе от подписки.
-        Доступна страница «Избранное»:
-            на странице рецепта есть возможность добавить рецепт в список избранного и удалить его оттуда;
-            на любой странице со списком рецептов есть возможность добавить рецепт в список избранного и удалить его оттуда.
-        Доступна страница «Список покупок»:
-            на странице рецепта есть возможность добавить рецепт в список покупок и удалить его оттуда;
-            на любой странице со списком рецептов есть возможность добавить рецепт в список покупок и удалить его оттуда;
-            есть возможность выгрузить файл с перечнем и количеством необходимых ингредиентов для рецептов из «Списка покупок»;
-            ингредиенты в выгружаемом списке не повторяются, корректно подсчитывается общее количество для каждого ингредиента.
-        Доступна страница «Создать рецепт»:
-            есть возможность опубликовать свой рецепт;
-            есть возможность отредактировать и сохранить изменения в своём рецепте;
-            есть возможность удалить свой рецепт.
-        Доступна возможность изменить пароль.
-        Доступна возможность изменить/удалить изображение профиля.
-        Доступна возможность выйти из системы.
-    - Администратор
-        Все модели выведены в админ-зону.
-        Для модели пользователей доступен поиск по имени и адресу электронной почты.
-        Для модели рецептов включен поиск по названию, автору и фильтрация по тегам.
-        На админ-странице рецепта отображается общее число добавлений этого рецепта в избранное.
-        Для модели ингредиентов работает поиск по названию.
-- Фильтры
 
-- Пагинация
+1/ Установить на сервере Docker, Docker Compose:
 
-распределить
-приложения api, users, recipes
-сереализаторы api
-валидаторы api
-пермишены api
-пагинатор api
-модели users, recipes
+    sudo apt install curl                                   - установка утилиты для скачивания файлов
+    curl -fsSL https://get.docker.com -o get-docker.sh      - скачать скрипт для установки
+    sh get-docker.sh                                        - запуск скрипта
+    sudo apt-get install docker-compose-plugin              - последняя версия docker compose
 
-главная - пагинация 6 , от новых к старым
-страница входа
-страница регистрации,
-страница рецепта,
-страница пользователя,
-страница подписок,
-избранное
-список покупок,
-создание и редактирование рецепта,
-страница смены пароля,
-статические страницы «О проекте» и «Технологии».
+2/ Скопировать на сервер файлы docker-compose.yml, nginx.conf из папки infra 
+scp docker-compose.yml nginx.conf username@IP:/home/username/
+
+    # username - имя пользователя на сервере
+    # IP - публичный IP сервера
+
+3/ GitHub Actions необходимо в репозитории в разделе Secrets > Actions создать переменные окружения:
+    SECRET_KEY              - секретный ключ Django проекта
+    DOCKER_PASSWORD         - пароль от Docker Hub
+    DOCKER_USERNAME         - логин Docker Hub
+    HOST                    - публичный IP сервера
+    USER                    - имя пользователя на сервере
+    PASSPHRASE              - *если ssh-ключ защищен паролем
+    SSH_KEY                 - приватный ssh-ключ
+    TELEGRAM_TO             - ID телеграм-аккаунта для посылки сообщения
+    TELEGRAM_TOKEN          - токен бота, посылающего сообщение
+
+    DB_ENGINE               - django.db.backends.postgresql
+    DB_NAME                 - postgres
+    POSTGRES_USER           - postgres
+    POSTGRES_PASSWORD       - postgres
+    DB_HOST                 - db
+    DB_PORT                 - 5432 (порт по умолчанию)
+
+4/ Запуск оркестра
+    sudo docker-compose -f infra/docker-compose.yml up -d
+
+5/ Выполнить миграции:
+    sudo docker compose exec backend python manage.py migrate
+
+6/ Собрать статику:
+    sudo docker compose exec backend python manage.py collectstatic --noinput
+
+7/ Наполнить базу данных содержимым из файла ingredients.json:
+    sudo docker-compose -f infra/docker-compose.yml exec backend python /app/manage.py load_ingredients.py ../prepared_data/ingredients.json
+
+8/ Создать суперпользователя:
+    sudo docker compose exec backend python manage.py createsuperuser
+Для остановки контейнеров Docker:
+
+sudo docker compose down -v      - с их удалением
+sudo docker compose stop         - без удаления
+После каждого обновления репозитория (push в ветку master) будет происходить:
+
+
+
