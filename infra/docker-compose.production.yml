@@ -13,11 +13,11 @@ services:
       - foodgram_pg_data:/var/lib/postgresql/data
 
   backend:
-    container_name: foodgram-backend
+    container_name: foodgram-back
     depends_on:
       - foodgram_db
     env_file: .env
-    build: ../backend
+    image: attame/foodgram_backend
     volumes:
       - ../data/:/prepared_data/
       - foodgram_static:/backend_static/
@@ -26,14 +26,14 @@ services:
 
   frontend:
     container_name: foodgram-front
-    build: ../frontend
+    image: attame/foodgram_frontend
     command: cp -r /app/build/. /static/
     volumes:
       - foodgram_static:/static/
 
   gateway:
     container_name: foodgram-proxy
-    image: nginx:1.25.4-alpine
+    image: attame/foodgram_gateway
     depends_on:
       - backend
       - frontend

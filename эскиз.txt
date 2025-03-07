@@ -8,8 +8,8 @@
 + создать сеть нетворк - docker network create foodgram-network
 + объеденить БД и сеть нетворк  - docker network connect foodgram-network foodgram_db
 + прописать конфиг нджинкс
--прописать докер для контейнеров
--прописать докер для продакшена
++ прописать докер для контейнеров
++ прописать докер для продакшена
 -очистить сервак
 -написать workflow .github/workflows, а в ней — файл main.yml.
 
