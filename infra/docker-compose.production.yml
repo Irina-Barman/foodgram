@@ -33,6 +33,7 @@ services:
     container_name: foodgram-proxy
     image: attame/foodgram_gateway
     env_file: .env
+    volumes:
       - foodgram_media:/media/
       - foodgram_static:/static/
     ports:
