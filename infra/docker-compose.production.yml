@@ -7,7 +7,7 @@ volumes:
 services:
   foodgram_db:
     image: postgres:13
-    env_file: .env
+    env_file: ./infra/.env
     volumes:
       - foodgram_pg_data:/var/lib/postgresql/data
 
@@ -15,7 +15,7 @@ services:
     container_name: foodgram-back
     depends_on:
       - foodgram_db
-    env_file: .env
+    env_file: ./infra/.env
     image: attame/foodgram_backend
     volumes:
       - ../data/:/prepared_data/
@@ -33,7 +33,7 @@ services:
   nginx:
     container_name: foodgram-proxy
     image: attame/foodgram_gateway
-    env_file: .env
+    env_file: ./infra/.env
       - foodgram_media:/media/
       - foodgram_static:/static/
     ports:
