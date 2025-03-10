@@ -12,7 +12,6 @@ services:
 
   backend:
     container_name: foodgram-backend
-    mem_limit: 512m
     depends_on:
       - foodgram_db
     env_file: .env
@@ -30,7 +29,6 @@ services:
 
   nginx:
     container_name: foodgram-proxy
-    mem_limit: 256m
     build: ./nginx/
     env_file: .env
     volumes:
