@@ -31,6 +31,7 @@ services:
 
   nginx:
     container_name: foodgram-proxy
+    mem_limit: 256m
     image: attame/foodgram_gateway
     env_file: .env
     volumes:
