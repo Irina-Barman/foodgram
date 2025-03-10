@@ -29,13 +29,14 @@ services:
     volumes:
       - foodgram_static:/static/
 
-  gateway:
+  nginx:
     container_name: foodgram-proxy
     build: ./nginx/
     env_file: .env
     volumes:
-      - static_kittygram:/staticfiles
+      - foodgram_static:/staticfiles
       - media_kittygram:/media
+
     ports:
       - 8080:80
     depends_on:
