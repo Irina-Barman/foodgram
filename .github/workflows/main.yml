@@ -128,15 +128,6 @@ jobs:
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
           echo "ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}" >> .env
           echo "DEBUG=${{ secrets.DEBUG }}" >> .env
-      - name: Copy ingredients.json via SSH
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: "data/ingredients.json"
-          target: "Dep/foodgram/"
       - name: Copy .env via ssh's scp
         uses: appleboy/scp-action@master
         with:
@@ -166,10 +157,11 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             cd foodgram/infra/
-            sudo docker compose -f docker-compose.production.yml down
             sudo docker compose -f docker-compose.production.yml pull
-            sudo docker compose -f docker-compose.production.yml up -d --build
-            sudo docker compose -f docker-compose.production.yml exec backend python /app/manage.py load_ingredients ../prepared_data/ingredients.json
+            sudo docker compose -f docker-compose.production.yml down
+            sudo docker compose -f docker-compose.production.yml up -d
+            sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
+            sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
 
   send_message:
     runs-on: ubuntu-latest
