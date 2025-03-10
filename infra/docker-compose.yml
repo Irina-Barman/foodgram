@@ -12,6 +12,7 @@ services:
 
   backend:
     container_name: foodgram-backend
+    mem_limit: 512m
     depends_on:
       - foodgram_db
     env_file: .env

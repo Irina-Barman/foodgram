@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from users.models import Subscription
 
-from ..recipes.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
+from recipes.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
 from .filters import IngredientSearchFilter, RecipeFilter
 from .pagination import LimitPagePagination
 from .permissions import IsOwnerOrReadOnly
