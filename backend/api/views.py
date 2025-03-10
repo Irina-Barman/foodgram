@@ -2,45 +2,39 @@ import csv
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
-
 from django_filters.rest_framework import DjangoFilterBackend
-
+from djoser.views import UserViewSet
+from recipes.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
 from rest_framework import filters, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError, AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import (
-    RetrieveUpdateDestroyAPIView,
-    get_object_or_404,
-)
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-
-from djoser.views import UserViewSet
+from users.models import Subscription
 
 from .filters import IngredientSearchFilter, RecipeFilter
 from .pagination import LimitPagePagination
 from .permissions import IsOwnerOrReadOnly
 from .serializers import (
     AvatarSerializer,
-    TagSerializer,
-    ShoppingCartSerializer,
-    IngredientSerializer,
-    SubscriptionSerializer,
-    RecipeSerializer,
-    FavoritesSerializer,
     CustomUserSerializer,
+    FavoritesSerializer,
+    IngredientSerializer,
+    RecipeSerializer,
+    ShoppingCartSerializer,
+    SubscriptionSerializer,
+    TagSerializer,
 )
-from recipes.models import Tag, Recipe, Ingredient, Favorites, ShoppingCart
-from users.models import Subscription
-
 
 User = get_user_model()
 
 
 class ShortLinkView(APIView):
     """Вьюсет для генерации короткой ссылки на рецепт."""
+
     def get(self, request, id):
         recipe = get_object_or_404(Recipe, id=id)
         base_url = request.build_absolute_uri("/")  # Получаем базовый URL
@@ -52,6 +46,7 @@ class ShortLinkView(APIView):
 
 class CustomUserViewSet(UserViewSet):
     """Вьюсет для модели пользователя."""
+
     pagination_class = LimitPagePagination
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
@@ -116,6 +111,7 @@ class CustomUserViewSet(UserViewSet):
 
 class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
     """Вьюсет аватара пользователя."""
+
     serializer_class = AvatarSerializer
 
     def get_object(self):
@@ -146,6 +142,7 @@ class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
 
 class RecipeViewSet(ModelViewSet):
     """Вьюсет для модели рецепта."""
+
     serializer_class = RecipeSerializer
     queryset = Recipe.objects.all()
     pagination_class = LimitPagePagination
@@ -206,6 +203,7 @@ class RecipeViewSet(ModelViewSet):
 
 class FavoritesViewSet(ModelViewSet):
     """Вьюсет списка избранных рецептов."""
+
     serializer_class = FavoritesSerializer
     queryset = Favorites.objects.all()
     permission_classes = [IsAuthenticated]
@@ -244,6 +242,7 @@ class FavoritesViewSet(ModelViewSet):
 
 class TagViewSet(ReadOnlyModelViewSet):
     """Вьюсет для модели тега."""
+
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (IsOwnerOrReadOnly,)
@@ -251,6 +250,7 @@ class TagViewSet(ReadOnlyModelViewSet):
 
 class IngredientViewSet(ReadOnlyModelViewSet):
     """Вьюсет для модели ингредиента."""
+
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (IsOwnerOrReadOnly,)
@@ -260,10 +260,11 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 
 class SubscriptionViewSet(ModelViewSet):
     """Вьюсет подписки"""
+
     serializer_class = SubscriptionSerializer
     pagination_class = LimitPagePagination
     permission_classes = [IsOwnerOrReadOnly]
-    
+
     def validate_subscription(self, user, author):
         """Проверяет валидность подписки"""
         if not user.is_authenticated:

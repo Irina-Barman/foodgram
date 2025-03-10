@@ -4,33 +4,28 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import F
 from django.shortcuts import get_object_or_404
-
 from djoser.serializers import UserCreateSerializer, UserSerializer
-
 from drf_extra_fields.fields import Base64ImageField
-
+from recipes.models import (
+    Favorites,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShoppingCart,
+    Tag,
+)
 from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import (
-    ModelSerializer,
-    SerializerMethodField,
-    ReadOnlyField,
-    PrimaryKeyRelatedField,
     CharField,
-    IntegerField,
     Field,
+    IntegerField,
+    ModelSerializer,
+    PrimaryKeyRelatedField,
+    ReadOnlyField,
+    SerializerMethodField,
 )
 from rest_framework.validators import UniqueTogetherValidator
-
-from recipes.models import (
-    Tag,
-    Recipe,
-    Ingredient,
-    RecipeIngredient,
-    Favorites,
-    ShoppingCart,
-)
 from users.models import Subscription
-
 
 User = get_user_model()
 
@@ -39,6 +34,7 @@ class CustomUserSerializer(UserSerializer):
     """
     Сериализатор пользователей с дополнительными полями подписки и аватара.
     """
+
     is_subscribed = SerializerMethodField()
     avatar = Base64ImageField(allow_null=True)
 
@@ -64,6 +60,7 @@ class CustomUserSerializer(UserSerializer):
 
 class CustomCreateUserSerializer(UserCreateSerializer):
     """Сериализатор для регистрации пользователей."""
+
     class Meta:
         model = User
         fields = (
@@ -96,6 +93,7 @@ class CustomCreateUserSerializer(UserCreateSerializer):
 
 class TagSerializer(ModelSerializer):
     """Сериализатор модели тега."""
+
     class Meta:
         model = Tag
         fields = "__all__"
@@ -104,6 +102,7 @@ class TagSerializer(ModelSerializer):
 
 class IngredientSerializer(ModelSerializer):
     """Сериализатор модели ингредиента."""
+
     class Meta:
         model = Ingredient
         fields = "__all__"
@@ -116,6 +115,7 @@ class IngredientSerializer(ModelSerializer):
 
 class RecipeIngredientSerializer(ModelSerializer):
     """Сериализатор для ингредиентов в рецепте."""
+
     id = PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     name = CharField(source="ingredient.name", read_only=True)
     measurement_unit = CharField(
@@ -130,6 +130,7 @@ class RecipeIngredientSerializer(ModelSerializer):
 
 class RecipeSerializer(ModelSerializer):
     """Сериализатор модели рецепта."""
+
     image = Base64ImageField()
     tags = TagSerializer(read_only=True, many=True)
     ingredients = RecipeIngredientSerializer(
@@ -280,6 +281,7 @@ class RecipeSerializer(ModelSerializer):
 
 class AvatarSerializer(ModelSerializer):
     "Сереализатор аватара пользователя."
+
     avatar = Base64ImageField(required=True, allow_null=True)
 
     class Meta:
@@ -317,6 +319,7 @@ class RecipeSubscriptionUserField(Field):
 
 class SubscriptionSerializer(ModelSerializer):
     """Сериализатор для подписок."""
+
     recipes = RecipeSubscriptionUserField()
     recipes_count = SerializerMethodField(read_only=True)
     id = ReadOnlyField(source="author.id")
@@ -389,6 +392,7 @@ class SubscriptionSerializer(ModelSerializer):
 
 class FavoritesSerializer(ModelSerializer):
     """Сериализатор для списка избранных рецептов."""
+
     id = IntegerField()
     name = CharField()
     image = Base64ImageField(
@@ -407,6 +411,7 @@ class FavoritesSerializer(ModelSerializer):
 
 class ShoppingCartSerializer(ModelSerializer):
     """Сериализатор для списка покупок."""
+
     id = IntegerField()
     name = CharField()
     image = Base64ImageField(max_length=None, use_url=False)
