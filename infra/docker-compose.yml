@@ -33,7 +33,7 @@ services:
     env_file: .env
     volumes:
       - foodgram_static:/staticfiles
-      - media_kittygram:/media
+      - foodgram_media:/media
 
     ports:
       - 8080:80
