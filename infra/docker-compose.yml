@@ -31,14 +31,12 @@ services:
 
   gateway:
     container_name: foodgram-proxy
-    image: nginx:1.25.4-alpine
+    build: ./nginx/
+    env_file: .env
+    volumes:
+      - static_kittygram:/staticfiles
+      - media_kittygram:/media
+    ports:
+      - 8080:80
     depends_on:
       - backend
-      - frontend
-    ports:
-      - "8080:80"
-    volumes:
-      - ./infra/nginx.conf:/etc/nginx/conf.d/default.conf
-      - foodgram_media:/media/
-      - foodgram_static:/static/
-      - ../docs/:/usr/share/nginx/html/api/docs/
