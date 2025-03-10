@@ -11,4 +11,3 @@ django-filter==25.1
 psycopg2-binary==2.9.3
 drf_extra_fields==3.7.0
 
-
