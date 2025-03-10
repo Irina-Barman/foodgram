@@ -4,17 +4,21 @@ from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from recipes.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
+
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
-from rest_framework.generics import RetrieveUpdateDestroyAPIView, get_object_or_404
+from rest_framework.generics import (
+    RetrieveUpdateDestroyAPIView,
+    get_object_or_404,
+)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from users.models import Subscription
 
+from ..recipes.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
 from .filters import IngredientSearchFilter, RecipeFilter
 from .pagination import LimitPagePagination
 from .permissions import IsOwnerOrReadOnly
