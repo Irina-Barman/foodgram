@@ -139,6 +139,7 @@ REST_FRAMEWORK = {
         "django_filters.rest_framework.DjangoFilterBackend"
     ],
 }
+
 DJOSER = {
     "LOGIN_FIELD": "email",
     "HIDE_USERS": False,
