@@ -13,7 +13,6 @@
 -очистить сервак
 -написать workflow .github/workflows, а в ней — файл main.yml.
 
-
 1/ Установить на сервере Docker, Docker Compose:
 
     sudo apt install curl                                   - установка утилиты для скачивания файлов
