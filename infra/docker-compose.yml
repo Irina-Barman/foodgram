@@ -31,6 +31,7 @@ services:
 
   nginx:
     container_name: foodgram-proxy
+    mem_limit: 256m
     build: ./nginx/
     env_file: .env
     volumes:
