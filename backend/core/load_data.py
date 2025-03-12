@@ -1,10 +1,8 @@
 import csv
 import os
+
 import django
-from django.conf import settings
-
 from recipes.models import Ingredient
-
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "foodgram_project.settings")
 django.setup()
