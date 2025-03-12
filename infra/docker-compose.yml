@@ -1,8 +1,10 @@
+version: '3.8'
+
 volumes:
   foodgram_pg_data:
   foodgram_static:
   foodgram_media:
-  
+
 services:
   foodgram_db:
     image: postgres:13
@@ -11,15 +13,25 @@ services:
       - foodgram_pg_data:/var/lib/postgresql/data
       - ./foodgram/data/ingredients.csv:/app/ingredients.csv
 
+  migrate:
+    container_name: foodgram-migrate
+    depends_on:
+      - foodgram_db
+    env_file: .env
+    build: ../backend
+    command: sh -c "python /app/manage.py migrate && python /app/manage.py collectstatic --noinput"
+  
   backend:
     container_name: foodgram-backend
     depends_on:
       - foodgram_db
+      - migrate
     env_file: .env
     build: ../backend
     volumes:
       - foodgram_static:/backend_static/
       - foodgram_media:/app/backend_media/
+    command: gunicorn --bind 0.0.0.0:8000 backend.wsgi
 
   frontend:
     container_name: foodgram-front
@@ -35,7 +47,6 @@ services:
     volumes:
       - foodgram_static:/staticfiles
       - foodgram_media:/media
-
     ports:
       - 8080:80
     depends_on:
