@@ -8,6 +8,6 @@ RUN pip install -r requirements.txt --no-cache-dir
 
 COPY . .
 
-COPY data/ingredients.csv foodgram/data/
+COPY ../data/ingredients.csv foodgram/data/
 
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "foodgram_project.wsgi"]
