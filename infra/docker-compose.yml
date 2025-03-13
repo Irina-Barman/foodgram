@@ -11,7 +11,7 @@ services:
     env_file: .env
     volumes:
       - foodgram_pg_data:/var/lib/postgresql/data
-      - ./foodgram/data/ingredients.csv:/app/ingredients.csv
+      - ../backend/data/ingredients.csv:/app/ingredients.csv
 
   migrate:
     container_name: foodgram-migrate
