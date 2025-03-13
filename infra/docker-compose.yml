@@ -30,7 +30,7 @@ services:
     volumes:
       - foodgram_static:/backend_static/
       - foodgram_media:/app/backend_media/
-      - ../data/:/prepared_data/
+      - backend/data/:/prepared_data/
     command: gunicorn --bind 0.0.0.0:8080 backend.wsgi
 
   frontend:
