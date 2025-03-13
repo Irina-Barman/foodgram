@@ -11,7 +11,6 @@ services:
     env_file: .env
     volumes:
       - foodgram_pg_data:/var/lib/postgresql/data
-      - ../backend/data/ingredients.csv:/app/ingredients.csv
 
   migrate:
     container_name: foodgram-migrate
@@ -31,7 +30,8 @@ services:
     volumes:
       - foodgram_static:/backend_static/
       - foodgram_media:/app/backend_media/
-    command: gunicorn --bind 0.0.0.0:8000 backend.wsgi
+      - ../data/:/prepared_data/
+    command: gunicorn --bind 0.0.0.0:8080 backend.wsgi
 
   frontend:
     container_name: foodgram-front
@@ -47,6 +47,7 @@ services:
     volumes:
       - foodgram_static:/staticfiles
       - foodgram_media:/media
+      - ../docs/:/usr/share/nginx/html/api/docs/
     ports:
       - 8080:80
     depends_on:
