@@ -145,7 +145,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "infra/docker-compose.production.yml"
-          target: "foodgram"
+          target: foodgram
           debug: true
       - name: Copy ingredients.json via SSH
         uses: appleboy/scp-action@master
@@ -155,7 +155,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "data/ingredients.json"
-          target: "foodgram/data/"
+          target: foodgram
       - name: Executing Remote SSH Commands to Deploy
         uses:
           appleboy/ssh-action@master
@@ -172,7 +172,7 @@ jobs:
         
 
             # Переходим в директорию infra
-            cd foodgram/infra/
+            cd ../infra
         
             # Обновляем и перезапускаем контейнеры
             sudo docker compose -f docker-compose.production.yml pull
