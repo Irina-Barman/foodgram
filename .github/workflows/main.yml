@@ -156,15 +156,6 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "backend/data/ingredients.json"
           target: "foodgram/data/"
-      - name: Copy ingredients.json via SSH
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: "foodgram/data/ingredients.json"
-          target: "foodgram/data/"
       - name: Executing Remote SSH Commands to Deploy
         uses:
           appleboy/ssh-action@master
@@ -174,16 +165,27 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            sudo mkdir -p foodgram/data
-
-            cd foodgram/infra/
+            # Создаем директорию, если она не существует
+            sudo mkdir -p /path/to/foodgram/data
+        
+            # Переходим в директорию infra
+            cd /path/to/foodgram/infra/
+        
+            # Обновляем и перезапускаем контейнеры
             sudo docker compose -f docker-compose.production.yml pull
             sudo docker compose -f docker-compose.production.yml down
             sudo docker compose -f docker-compose.production.yml up -d
+        
+            # Выполняем миграции и собираем статические файлы
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
+        
+            # Копируем собранные статические файлы
             sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /backend_static/static/
+        
+            # Загружаем ингредиенты
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py load_ingredients /foodgram/data/ingredients.json
+        
 
   send_message:
     runs-on: ubuntu-latest
