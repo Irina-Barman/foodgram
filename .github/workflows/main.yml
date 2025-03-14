@@ -170,7 +170,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
 
-            cd foodgram/infra
+            cd foodgram/infra/
         
             sudo docker compose -f docker-compose.production.yml pull
             sudo docker compose -f docker-compose.production.yml down
