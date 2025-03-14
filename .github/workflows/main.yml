@@ -154,7 +154,7 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: "backend/data/ingredients.json"
+          source: "data/ingredients.json"
           target: "foodgram/data/"
       - name: Executing Remote SSH Commands to Deploy
         uses:
@@ -166,10 +166,10 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             # Создаем директорию, если она не существует
-            sudo mkdir -p /path/to/foodgram/data
+            sudo mkdir -p foodgram/data
         
             # Переходим в директорию infra
-            cd /path/to/foodgram/infra/
+            cd foodgram/infra/
         
             # Обновляем и перезапускаем контейнеры
             sudo docker compose -f docker-compose.production.yml pull
