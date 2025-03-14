@@ -166,7 +166,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             # Создаем директорию, если она не существует
-            sudo mkdir -p foodgram/data
+            # sudo mkdir -p foodgram/data
         
             # Переходим в директорию infra
             cd foodgram/infra/
