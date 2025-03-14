@@ -155,7 +155,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "data/ingredients.json"
-          target: foodgram
+          target: foodgram/data/
       - name: Executing Remote SSH Commands to Deploy
         uses:
           appleboy/ssh-action@master
