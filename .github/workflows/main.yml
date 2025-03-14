@@ -144,7 +144,7 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: "data/ingredients.json"
+          source: "data"
           target: foodgram/infra/
           debug: true
 
