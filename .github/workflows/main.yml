@@ -165,9 +165,12 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            # Создаем директорию, если она не существует
-            # sudo mkdir -p foodgram/data
+
+            cd foodgram/data
+            # Загружаем ингредиенты
+            sudo docker compose -f docker-compose.production.yml exec backend python manage.py load_ingredients /foodgram/data/ingredients.json
         
+
             # Переходим в директорию infra
             cd foodgram/infra/
         
@@ -183,8 +186,7 @@ jobs:
             # Копируем собранные статические файлы
             sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /backend_static/static/
         
-            # Загружаем ингредиенты
-            sudo docker compose -f docker-compose.production.yml exec backend python manage.py load_ingredients /foodgram/data/ingredients.json
+            
         
 
   send_message:
