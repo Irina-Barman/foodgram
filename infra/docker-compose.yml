@@ -20,10 +20,14 @@ services:
     env_file: .env
     build: ../backend
     volumes:
+      - ../data/:/prepared_data/
       - foodgram_static:/backend_static/
       - foodgram_media:/app/backend_media/
-      - ../data/:/prepared_data/
-    command: sh -c "python /app/manage.py collectstatic --noinput && python /app/manage.py migrate && cp -r /app/collected_static/. /backend_static/static/ && gunicorn --bind 0.0.0.0:8080 foodgram_project.wsgi:application"
+    command: sh -c "echo 'Loading ingredients...' && python /app/manage.py load_ingredients /prepared_data/ingredients.json && \
+      echo 'Collecting static files...' && python /app/manage.py collectstatic --noinput && \
+      echo 'Applying migrations...' && python /app/manage.py migrate && \
+      echo 'Copying collected static files...' && cp -r /app/collected_static/. /backend_static/static/ && \
+      echo 'Starting Gunicorn server...' && gunicorn --bind 0.0.0.0:8080 foodgram_project.wsgi:application"
 
 
   frontend:
