@@ -11,6 +11,14 @@ services:
     volumes:
       - foodgram_pg_data:/var/lib/postgresql/data
 
+  migrate:
+    container_name: foodgram-migrate
+    depends_on:
+      - foodgram_db
+    env_file: .env
+    build: ../backend
+    command: sh -c "python /app/manage.py migrate && python /app/manage.py collectstatic --noinput"
+
   backend:
     container_name: foodgram-back
     depends_on:
@@ -21,8 +29,7 @@ services:
       - foodgram_static:/backend_static/
       - foodgram_media:/app/backend_media/
       - ../data/:/prepared_data/
-    command: sh -c "python /app/manage.py collectstatic --noinput && python /app/manage.py migrate && cp -r /app/collected_static/. /backend_static/static/ && gunicorn --bind 0.0.0.0:8080 foodgram_project.wsgi:application"
-
+    command: gunicorn --bind 0.0.0.0:8080 backend.wsgi
 
   frontend:
     container_name: foodgram-front
