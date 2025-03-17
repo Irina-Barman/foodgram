@@ -10,7 +10,6 @@ services:
     env_file: .env
     volumes:
       - foodgram_pg_data:/var/lib/postgresql/data
-      - ./infra:/docker-entrypoint-initdb.d
 
   backend:
     container_name: foodgram-back
