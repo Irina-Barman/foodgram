@@ -29,7 +29,7 @@ services:
       - foodgram_static:/backend_static/
       - foodgram_media:/app/backend_media/
       - ../data/:/prepared_data/
-    command: gunicorn --bind 0.0.0.0:8080 backend.wsgi
+    command: gunicorn --bind 0.0.0.0:8080 foodgram_project.wsgi
 
   frontend:
     container_name: foodgram-front
