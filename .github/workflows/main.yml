@@ -145,7 +145,7 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: "backend/data/ingredients.json"
+          source: "data/ingredients.json"
           target: foodgram/
         
 
@@ -172,8 +172,8 @@ jobs:
             cd foodgram/infra/
             sudo docker compose -f docker-compose.production.yml pull
             sudo docker compose -f docker-compose.production.yml down
-            sudo docker compose -f docker-compose.production.yml up -d
-            sudo docker compose -f docker-compose.production.yml exec backend python /app/manage.py load_ingredients /prepared_data/ingredients.json
+            sudo docker compose -f docker-compose.production.yml up -d --build
+            sudo docker compose -f docker-compose.production.yml exec backend python /app/manage.py load_ingredients ../prepared_data/ingredients.json
 
 
   send_message:

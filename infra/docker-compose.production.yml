@@ -27,9 +27,9 @@ services:
   frontend:
     container_name: foodgram-front
     image: attame/foodgram_frontend
-    command: cp -r /app/build/. /static/
     volumes:
       - foodgram_static:/static/
+    command: cp -r /app/build/. /static/
 
   nginx:
     container_name: foodgram-proxy
