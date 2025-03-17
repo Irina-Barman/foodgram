@@ -17,7 +17,7 @@ services:
     depends_on:
       - foodgram_db
     env_file: .env
-    build: ../backend
+    build: ../foodgram_project
     command: sh -c "python /app/manage.py migrate && python /app/manage.py collectstatic --noinput"
 
   backend:
