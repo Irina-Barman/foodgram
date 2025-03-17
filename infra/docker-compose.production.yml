@@ -21,7 +21,7 @@ services:
 
   backend:
     container_name: foodgram-back
-    depends_on:
+    depends_on: 
       - foodgram_db
     env_file: .env
     image: attame/foodgram_backend
