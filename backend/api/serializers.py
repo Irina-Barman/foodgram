@@ -169,17 +169,19 @@ class RecipeSerializer(ModelSerializer):
         return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
 
     def validate(self, data):
-        """Метод для валидации данных перед созданием рецепта"""
+        """Метод для валидации данных перед созданием рецепта."""
         request = self.context.get("request")
         ingredients = self.initial_data.get("ingredients", [])
         tags = self.initial_data.get("tags", [])
         name = data.get("name")
         cooking_time = data.get("cooking_time")
         image = data.get("image")
+
         if not request.user.is_authenticated:
             raise ValidationError(
                 {"detail": "Пользователь не авторизован"}, code=401
             )
+
         if (
             not ingredients
             or not isinstance(ingredients, list)
@@ -198,20 +200,28 @@ class RecipeSerializer(ModelSerializer):
         for ingredient_item in ingredients:
             ingredient_id = ingredient_item.get("id")
             amount = ingredient_item.get("amount")
+
+            # Преобразование amount в целое число
+            try:
+                amount = int(amount)
+            except (ValueError, TypeError):
+                raise ValidationError(
+                    "Количество ингредиента должно быть целым числом"
+                )
+
             if ingredient_id in ingredient_ids:
                 raise ValidationError("Ингредиент уже добавлен в рецепт")
 
             if not Ingredient.objects.filter(id=ingredient_id).exists():
                 raise ValidationError(
-                    {
-                        "ingredients": f"Ингредиента с id {ingredient_id} нет"
-                    }
+                    {"ingredients": f"Ингредиента с id {ingredient_id} нет"}
                 )
 
-            if not isinstance(amount, (int, float)) or amount <= 0:
+            if amount <= 0:
                 raise ValidationError(
-                    "Необходимо добавить хотя бы один ингредиент"
+                    "Количество ингредиента должно быть положительным"
                 )
+
             ingredient_ids.add(ingredient_id)
 
         tag_ids = set()
@@ -225,7 +235,15 @@ class RecipeSerializer(ModelSerializer):
                     {"tags": f"Тег с id {tag} не существует"}
                 )
 
-        if not isinstance(cooking_time, int) or cooking_time <= 0:
+        # Преобразование cooking_time в целое число
+        try:
+            cooking_time = int(cooking_time)
+        except (ValueError, TypeError):
+            raise ValidationError(
+                "Время приготовления должно быть целым числом"
+            )
+
+        if cooking_time <= 0:
             raise ValidationError(
                 "Время приготовления должно быть положительным целым числом"
             )
