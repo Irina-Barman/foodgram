@@ -204,7 +204,7 @@ class RecipeSerializer(ModelSerializer):
             if not Ingredient.objects.filter(id=ingredient_id).exists():
                 raise ValidationError(
                     {
-                        "ingredients": f"Ингредиент с id {ingredient_id} не существует"
+                        "ingredients": f"Ингредиента с id {ingredient_id} нет"
                     }
                 )
 
