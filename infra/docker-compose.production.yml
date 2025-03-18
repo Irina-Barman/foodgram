@@ -11,10 +11,21 @@ services:
     volumes:
       - foodgram_pg_data:/var/lib/postgresql/data
 
+  load_ingredients_tags:
+    container_name: foodgram-load-ingredients-tags
+    depends_on:
+      - foodgram_db
+    env_file: .env
+    image: attame/foodgram_backend
+    volumes:
+      - ../data/:/prepared_data/
+    command: sh -c "echo 'Loading ingredients and tags...' && python /app/manage.py load_ingredients /prepared_data/ingredients.json && python /app/manage.py load_tags /prepared_data/tags.json
+
   backend:
     container_name: foodgram-back
     depends_on:
       - foodgram_db
+      - load_ingredients_tags
     env_file: .env
     image: attame/foodgram_backend
     volumes:
@@ -26,15 +37,6 @@ services:
       echo 'Copying collected static files...' && cp -r /app/collected_static/. /backend_static/static/ && \
       echo 'Starting Gunicorn server...' && gunicorn --bind 0.0.0.0:8080 foodgram_project.wsgi:application"
 
-  load_ingredients:
-    container_name: foodgram-load-ingredients
-    depends_on:
-      - foodgram_db
-    env_file: .env
-    image: attame/foodgram_backend
-    volumes:
-      - ../data/:/prepared_data/
-    command: sh -c "echo 'Loading ingredients...' && python /app/manage.py load_ingredients /prepared_data/ingredients.json"
 
   frontend:
     container_name: foodgram-front
