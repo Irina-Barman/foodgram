@@ -20,9 +20,8 @@ services:
     volumes:
       - ../data/:/prepared_data/
     command: >
-      sh -c "echo 'Loading ingredients and tags...' &&
-      python /app/manage.py load_ingredients /prepared_data/ingredients.json &&
-      python /app/manage.py load_tags /prepared_data/tags.json"
+      sh -c "echo 'Loading ingredients ...' && python /app/manage.py load_ingredients /prepared_data/ingredients.json && \
+      echo 'Loading tags ...' && python /app/manage.py load_tags /prepared_data/tags.json"
 
   backend:
     container_name: foodgram-back
