@@ -16,7 +16,7 @@ services:
     depends_on:
       - foodgram_db
     env_file: .env
-    image: attame/foodgram_backend
+    build: ../backend
     volumes:
       - ../data/:/prepared_data/
     command: >
