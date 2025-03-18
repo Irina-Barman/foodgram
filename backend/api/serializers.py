@@ -239,21 +239,23 @@ class RecipeSerializer(ModelSerializer):
     def create_ingredients(self, ingredients, recipe):
         """Добавление ингредиентов."""
         for ingredient in ingredients:
+            ingredient_instance = get_object_or_404(Ingredient, id=ingredient["id"])
             amount = ingredient["amount"]
-            if RecipeIngredient.objects.filter(
+            existing_recipe_ingredient = RecipeIngredient.objects.filter(
                 recipe=recipe,
-                ingredients=get_object_or_404(
-                    RecipeIngredient, id=ingredient["id"]
-                ),
-            ).exists():
-                amount += F("amount")
-            RecipeIngredient.objects.update_or_create(
-                recipe=recipe,
-                ingredients=get_object_or_404(
-                    RecipeIngredient, id=ingredient["id"]
-                ),
-                defaults={"amount": amount},
-            )
+                ingredients=ingredient_instance,
+            ).first()
+
+            if existing_recipe_ingredient:
+                amount += existing_recipe_ingredient.amount  # Используем текущее значение
+                existing_recipe_ingredient.amount = amount
+                existing_recipe_ingredient.save()
+            else:
+                RecipeIngredient.objects.create(
+                    recipe=recipe,
+                    ingredients=ingredient_instance,
+                    amount=amount,
+                )
 
     @transaction.atomic
     def create(self, validated_data):
