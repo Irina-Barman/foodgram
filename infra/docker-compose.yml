@@ -25,8 +25,6 @@ services:
       python /app/manage.py load_ingredients /prepared_data/ingredients.json &&
       python /app/manage.py load_tags /prepared_data/tags.json"
 
-
-
   backend:
     container_name: foodgram-backend
     depends_on:
