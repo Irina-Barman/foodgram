@@ -2,7 +2,6 @@ import re
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import F
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
@@ -239,7 +238,9 @@ class RecipeSerializer(ModelSerializer):
     def create_ingredients(self, ingredients, recipe):
         """Добавление ингредиентов."""
         for ingredient in ingredients:
-            ingredient_instance = get_object_or_404(Ingredient, id=ingredient["id"])
+            ingredient_instance = get_object_or_404(
+                Ingredient, id=ingredient["id"]
+            )
             amount = ingredient["amount"]
             existing_recipe_ingredient = RecipeIngredient.objects.filter(
                 recipe=recipe,
@@ -247,7 +248,7 @@ class RecipeSerializer(ModelSerializer):
             ).first()
 
             if existing_recipe_ingredient:
-                amount += existing_recipe_ingredient.amount  # Используем текущее значение
+                amount += existing_recipe_ingredient.amount
                 existing_recipe_ingredient.amount = amount
                 existing_recipe_ingredient.save()
             else:
