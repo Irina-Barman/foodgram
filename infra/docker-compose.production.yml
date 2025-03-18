@@ -3,7 +3,7 @@ volumes:
   foodgram_pg_data:
   foodgram_static:
   foodgram_media:
-  
+
 services:
   foodgram_db:
     image: postgres:13
@@ -21,14 +21,20 @@ services:
       - ../data/:/prepared_data/
       - foodgram_static:/backend_static/
       - foodgram_media:/app/backend_media/
-    command: sh -c "echo 'Loading ingredients...' && python /app/manage.py load_ingredients /prepared_data/ingredients.json && \
-      echo 'Collecting static files...' && python /app/manage.py collectstatic --noinput && \
+    command: sh -c "echo 'Collecting static files...' && python /app/manage.py collectstatic --noinput && \
       echo 'Applying migrations...' && python /app/manage.py migrate && \
       echo 'Copying collected static files...' && cp -r /app/collected_static/. /backend_static/static/ && \
       echo 'Starting Gunicorn server...' && gunicorn --bind 0.0.0.0:8080 foodgram_project.wsgi:application"
 
-
-
+  load_ingredients:
+    container_name: foodgram-load-ingredients
+    depends_on:
+      - foodgram_db
+    env_file: .env
+    image: attame/foodgram_backend
+    volumes:
+      - ../data/:/prepared_data/
+    command: sh -c "echo 'Loading ingredients...' && python /app/manage.py load_ingredients /prepared_data/ingredients.json"
 
   frontend:
     container_name: foodgram-front
