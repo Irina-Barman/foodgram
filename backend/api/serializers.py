@@ -180,10 +180,15 @@ class RecipeSerializer(ModelSerializer):
             raise ValidationError(
                 {"detail": "Пользователь не авторизован"}, code=401
             )
-        if not ingredients:
+        if (
+            not ingredients
+            or not isinstance(ingredients, list)
+            or len(ingredients) == 0
+        ):
             raise ValidationError(
                 {"ingredients": "В рецепте отсутствуют ингредиенты"}
             )
+
         if not tags:
             raise ValidationError({"tags": "В рецепте отсутствуют теги"})
         if not image:
@@ -192,19 +197,17 @@ class RecipeSerializer(ModelSerializer):
         ingredient_ids = set()
         for ingredient_item in ingredients:
             ingredient_id = ingredient_item.get("id")
+            amount = ingredient_item.get("amount")
             if ingredient_id in ingredient_ids:
                 raise ValidationError("Ингредиент уже добавлен в рецепт")
 
             if not Ingredient.objects.filter(id=ingredient_id).exists():
                 raise ValidationError(
                     {
-                        "ingredients": (
-                            f"Ингредиент с id {ingredient_id} не существует"
-                        )
+                        "ingredients": f"Ингредиент с id {ingredient_id} не существует"
                     }
                 )
 
-            amount = ingredient_item.get("amount")
             if not isinstance(amount, (int, float)) or amount <= 0:
                 raise ValidationError(
                     "Необходимо добавить хотя бы один ингредиент"
