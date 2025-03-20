@@ -33,7 +33,7 @@ services:
     volumes:
       - ../data/:/prepared_data/
       - foodgram_static:/backend_static/
-      - foodgram_media:/app/backend_media/
+      - foodgram_media:/app/media
     command: sh -c "echo 'Collecting static files...' && python /app/manage.py collectstatic --noinput && \
       echo 'Applying migrations...' && python /app/manage.py migrate && \
       echo 'Copying collected static files...' && cp -r /app/collected_static/. /backend_static/static/ && \
