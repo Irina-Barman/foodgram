@@ -184,9 +184,9 @@ class RecipeViewSet(ModelViewSet):
         ingredients_dict = {}
         for item in shopping_cart_items:
             recipe = item.recipe
-            for recipe_ingredient in recipe.recipe_ingredients.all():
-                ingredient = recipe_ingredient.ingredient
-                amount = recipe_ingredient.amount
+            for recipe_ingredients in recipe.recipe_ingredients.all():
+                ingredient = recipe_ingredients.ingredient
+                amount = recipe_ingredients.amount
 
                 if ingredient.name in ingredients_dict:
                     ingredients_dict[ingredient.name] += amount
