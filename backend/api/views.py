@@ -161,8 +161,14 @@ class RecipeViewSet(ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        # Дополнительная логика фильтрации
-        return queryset
+        # Получаем параметры фильтрации
+        filterset = self.filterset_class(self.request.GET, queryset=queryset)
+
+        # Если фильтры не применены, возвращаем общий список
+        if not filterset.is_valid() or not filterset.qs.exists():
+            return queryset
+
+        return filterset.qs
 
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
