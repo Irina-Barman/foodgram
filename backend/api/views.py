@@ -181,15 +181,17 @@ class RecipeViewSet(ModelViewSet):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
         shopping_cart_items = ShoppingCart.objects.filter(user=request.user)
-        # Словарь для хранения ингредиентов и их количеств
         ingredients_dict = {}
         for item in shopping_cart_items:
             recipe = item.recipe
-            for ingredient in recipe.ingredients.all():
+            for recipe_ingredient in recipe.recipe_ingredients.all():
+                ingredient = recipe_ingredient.ingredient
+                amount = recipe_ingredient.amount
+
                 if ingredient.name in ingredients_dict:
-                    ingredients_dict[ingredient.name] += ingredient.amount
+                    ingredients_dict[ingredient.name] += amount
                 else:
-                    ingredients_dict[ingredient.name] = ingredient.amount
+                    ingredients_dict[ingredient.name] = amount
 
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = (
