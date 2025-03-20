@@ -159,6 +159,11 @@ class RecipeViewSet(ModelViewSet):
     ]
     permission_classes = [IsOwnerOrReadOnly]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Дополнительная логика фильтрации
+        return queryset
+
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
         serializer.save(author=self.request.user)
