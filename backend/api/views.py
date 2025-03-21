@@ -158,7 +158,7 @@ class RecipeViewSet(ModelViewSet):
         "is_in_shopping_cart",
     ]
     permission_classes = [IsOwnerOrReadOnly]
-    
+
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
         serializer.save(author=self.request.user)
