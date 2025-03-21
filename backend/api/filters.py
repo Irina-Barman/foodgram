@@ -13,6 +13,7 @@ User = get_user_model()
 
 class RecipeFilter(FilterSet):
     """Фильтр для сортировки рецептов."""
+
     author = ModelChoiceFilter(queryset=User.objects.all())
     tags = django_filters.CharFilter(method="filter_tags")
     is_favorited = BooleanFilter(method="filter_is_favorited")
@@ -49,4 +50,5 @@ class RecipeFilter(FilterSet):
 
 class IngredientSearchFilter(SearchFilter):
     """Фильтр для поиска ингредиентов по названию."""
+
     search_param = "name"
