@@ -158,11 +158,7 @@ class RecipeViewSet(ModelViewSet):
         "is_in_shopping_cart",
     ]
     permission_classes = [IsOwnerOrReadOnly]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        return queryset
-
+    
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
         serializer.save(author=self.request.user)
