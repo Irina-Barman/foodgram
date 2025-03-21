@@ -181,7 +181,9 @@ class RecipeSerializer(ModelSerializer):
         return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
 
     def validate(self, data):
-        """Метод для валидации данных перед созданием рецепта."""
+        """
+        Метод для валидации данных перед созданием или обновлением рецепта.
+        """
         request = self.context.get("request")
         ingredients = self.initial_data.get("ingredients", [])
         tags = self.initial_data.get("tags", [])
@@ -260,8 +262,24 @@ class RecipeSerializer(ModelSerializer):
                 "Время приготовления должно быть положительным целым числом"
             )
 
-        user = self.context.get("request").user
-        if Recipe.objects.filter(name=name, author=user).exists():
+        # Проверка на существование рецепта с таким же именем
+        recipe_id = self.context.get("view").kwargs.get(
+            "pk"
+        )  # Получаем ID рецепта из URL
+        if recipe_id:
+            # Если это обновление, пропускаем проверку
+            existing_recipe = (
+                Recipe.objects.filter(name=name, author=request.user)
+                .exclude(id=recipe_id)
+                .exists()
+            )
+        else:
+            # Если это создание, просто проверяем
+            existing_recipe = Recipe.objects.filter(
+                name=name, author=request.user
+            ).exists()
+
+        if existing_recipe:
             raise ValidationError(
                 {"name": "Рецепт с таким именем уже существует"}
             )
