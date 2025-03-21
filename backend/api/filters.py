@@ -24,9 +24,12 @@ class RecipeFilter(FilterSet):
 
     def filter_tags(self, queryset, name, value):
         """Фильтрация по тегам."""
-        if not value:
+        if not value:  # Если теги не указаны, возвращаем все рецепты
             return queryset
-        return queryset.filter(tags__slug__in=value).distinct()
+
+        # Разделяем теги по запятой, если они передаются в виде строки
+        tags = value.split(',') if ',' in value else [value]
+        return queryset.filter(tags__slug__in=tags).distinct()
 
     def filter_is_favorited(self, queryset, name, value):
         """Фильтрация по избранным рецептам."""
