@@ -162,11 +162,11 @@ class RecipeViewSet(ModelViewSet):
     def get_queryset(self):
         # Получаем все рецепты
         queryset = super().get_queryset()
-        # Проверяем, есть ли теги в запросе
-        tags = self.request.query_params.getlist("tags", None)
-        if tags:
-            # Если теги выбраны, фильтруем по ним
-            queryset = get_filter_tags
+        # Создаем экземпляр фильтра
+        filterset = self.filterset_class(self.request.GET, queryset=queryset)
+        # Применяем фильтрацию
+        if filterset.is_valid():
+            queryset = filterset.qs
         return queryset
 
     def perform_create(self, serializer):

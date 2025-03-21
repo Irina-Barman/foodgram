@@ -13,7 +13,6 @@ User = get_user_model()
 
 class RecipeFilter(FilterSet):
     """Фильтр для сортировки рецептов."""
-
     author = ModelChoiceFilter(queryset=User.objects.all())
     tags = django_filters.CharFilter(method="filter_tags")
     is_favorited = BooleanFilter(method="filter_is_favorited")
@@ -23,15 +22,14 @@ class RecipeFilter(FilterSet):
         model = Recipe
         fields = ["author", "tags", "is_favorited", "is_in_shopping_cart"]
 
-    def get_queryset(self):
-        # Получаем все рецепты
-        queryset = super().get_queryset()
-        # Создаем экземпляр фильтра
-        filterset = self.filterset_class(self.request.GET, queryset=queryset)
-        # Применяем фильтрацию
-        if filterset.is_valid():
-            queryset = filterset.qs
-        return queryset
+    def filter_tags(self, queryset, name, value):
+        """Фильтрация по тегам."""
+        if not value:  # Если теги не указаны, возвращаем все рецепты
+            return queryset
+
+        # Разделяем теги по запятой, если они передаются в виде строки
+        tags = value.split(',') if ',' in value else [value]
+        return queryset.filter(tags__slug__in=tags).distinct()
 
     def filter_is_favorited(self, queryset, name, value):
         """Фильтрация по избранным рецептам."""
@@ -50,5 +48,4 @@ class RecipeFilter(FilterSet):
 
 class IngredientSearchFilter(SearchFilter):
     """Фильтр для поиска ингредиентов по названию."""
-
     search_param = "name"
