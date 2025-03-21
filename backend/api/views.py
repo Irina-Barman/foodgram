@@ -166,7 +166,7 @@ class RecipeViewSet(ModelViewSet):
         tags = self.request.query_params.getlist("tags", None)
         if tags:
             # Если теги выбраны, фильтруем по ним
-            queryset = queryset.filter(tags__in=tags).distinct()
+            queryset = get_filter_tags
         return queryset
 
     def perform_create(self, serializer):
