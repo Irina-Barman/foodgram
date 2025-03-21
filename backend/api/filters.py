@@ -30,14 +30,16 @@ class RecipeFilter(FilterSet):
 
     def filter_is_favorited(self, queryset, name, value):
         """Фильтрация по избранным рецептам."""
-        if self.request.user.is_authenticated and value:
-            return queryset.filter(in_favorites__user=self.request.user)
+        request = self.request
+        if request and request.user.is_authenticated and value:
+            return queryset.filter(in_favorites__user=request.user)
         return queryset
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         """Фильтрация по списку покупок."""
-        if self.request.user.is_authenticated and value:
-            return queryset.filter(shopping_cart__user=self.request.user)
+        request = self.request
+        if request and request.user.is_authenticated and value:
+            return queryset.filter(shopping_cart__user=request.user)
         return queryset
 
 
