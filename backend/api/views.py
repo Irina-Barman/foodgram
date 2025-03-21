@@ -160,15 +160,14 @@ class RecipeViewSet(ModelViewSet):
     permission_classes = [IsOwnerOrReadOnly]
 
     def get_queryset(self):
+        # Получаем все рецепты
         queryset = super().get_queryset()
-        # Получаем параметры фильтрации
-        filterset = self.filterset_class(self.request.GET, queryset=queryset)
-
-        # Если фильтры не применены, возвращаем общий список
-        if not filterset.is_valid() or not filterset.qs.exists():
-            return queryset
-
-        return filterset.qs
+        # Проверяем, есть ли теги в запросе
+        tags = self.request.query_params.getlist("tags", None)
+        if tags:
+            # Если теги выбраны, фильтруем по ним
+            queryset = queryset.filter(tags__in=tags).distinct()
+        return queryset
 
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
