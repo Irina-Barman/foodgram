@@ -160,13 +160,7 @@ class RecipeViewSet(ModelViewSet):
     permission_classes = [IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        # Получаем все рецепты
         queryset = super().get_queryset()
-        # Создаем экземпляр фильтра
-        filterset = self.filterset_class(self.request.GET, queryset=queryset)
-        # Применяем фильтрацию
-        if filterset.is_valid():
-            queryset = filterset.qs
         return queryset
 
     def perform_create(self, serializer):
