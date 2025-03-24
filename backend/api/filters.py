@@ -3,9 +3,10 @@ from django_filters.rest_framework import (
     BooleanFilter,
     FilterSet,
     ModelChoiceFilter,
+    MultipleChoiceFilter,
 )
 from recipes.models import Recipe
-from rest_framework.filters import AllValuesMultipleFilter, SearchFilter
+from rest_framework.filters import SearchFilter
 
 User = get_user_model()
 
@@ -14,7 +15,7 @@ class RecipeFilter(FilterSet):
     """Фильтр для сортировки рецептов."""
 
     author = ModelChoiceFilter(queryset=User.objects.all())
-    tags = AllValuesMultipleFilter(field_name="tags__slug", required=False)
+    tags = MultipleChoiceFilter(field_name="tags__slug", required=False)
     is_favorited = BooleanFilter(method="filter_is_favorited")
     is_in_shopping_cart = BooleanFilter(method="filter_is_in_shopping_cart")
 
