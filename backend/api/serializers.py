@@ -143,7 +143,9 @@ class RecipeSerializer(ModelSerializer):
     """Сериализатор модели рецепта."""
 
     image = Base64ImageField()
-    tags = TagSerializer(read_only=True, many=True)
+    tags = TagSerializer(
+        many=True
+    )  # Изменено на many=True, чтобы принимать массив тегов
     ingredients = RecipeIngredientSerializer(
         many=True, source="recipe_ingredients", read_only=True
     )
@@ -210,6 +212,7 @@ class RecipeSerializer(ModelSerializer):
         if not image:
             raise ValidationError({"image": "Поле image не может быть пустым"})
 
+        # Проверка ингредиентов
         ingredient_ids = set()
         for ingredient_item in ingredients:
             ingredient_id = ingredient_item.get("id")
@@ -237,18 +240,19 @@ class RecipeSerializer(ModelSerializer):
                 )
 
             ingredient_ids.add(ingredient_id)
+        # Проверка тегов
+        tag_slugs = [
+            tag["slug"] for tag in tags
+        ]  # Предполагается, что тег имеет поле slug
+        existing_tags = Tag.objects.filter(slug__in=tag_slugs).values_list(
+            "slug", flat=True
+        )
 
-        tag_ids = set()
-        for tag in tags:
-            if tag in tag_ids:
-                raise ValidationError({"tags": "Тег уже добавлен в рецепт"})
-            tag_ids.add(tag)
-
-            if not Tag.objects.filter(slug=tag).exists():
+        for tag in tag_slugs:
+            if tag not in existing_tags:
                 raise ValidationError(
-                    {"tags": f"Тег {tag} не существует"}
+                    {"tags": f"Тег с slug '{tag}' не существует"}
                 )
-
         # Преобразование cooking_time в целое число
         try:
             cooking_time = int(cooking_time)
@@ -261,7 +265,6 @@ class RecipeSerializer(ModelSerializer):
             raise ValidationError(
                 "Время приготовления должно быть положительным целым числом"
             )
-
         # Проверка на существование рецепта с таким же именем
         recipe_id = self.context.get("view").kwargs.get(
             "pk"
