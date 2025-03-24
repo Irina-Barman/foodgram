@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from django_filters.rest_framework import (
     BooleanFilter,
     FilterSet,
@@ -35,6 +36,14 @@ class RecipeFilter(FilterSet):
         request = self.request
         if request and request.user.is_authenticated and value:
             return queryset.filter(shopping_cart__user=request.user)
+        return queryset
+
+    def filter_tags(self, queryset, name, value):
+        """Фильтрация по тегам, одиночный и множественный выбор."""
+        if value:
+            return queryset.filter(
+                Q(tags__slug=value) | Q(tags__slug__in=value)
+            ).distinct()
         return queryset
 
 
