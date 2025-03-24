@@ -244,9 +244,9 @@ class RecipeSerializer(ModelSerializer):
                 raise ValidationError({"tags": "Тег уже добавлен в рецепт"})
             tag_ids.add(tag)
 
-            if not Tag.objects.filter(id=tag).exists():
+            if not Tag.objects.filter(slug=tag).exists():
                 raise ValidationError(
-                    {"tags": f"Тег с id {tag} не существует"}
+                    {"tags": f"Тег {tag} не существует"}
                 )
 
         # Преобразование cooking_time в целое число
