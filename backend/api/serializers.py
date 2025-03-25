@@ -166,18 +166,40 @@ class RecipeSerializer(ModelSerializer):
         ]
 
     def get_is_favorited(self, obj):
-        """Проверка наличия рецепта в избранном"""
+        """Проверка наличия рецепта в избранном."""
         user = self.context.get("request").user
-        if user.is_anonymous:
-            return False
-        return Favorites.objects.filter(user=user, recipe=obj).exists()
+        return (
+            not user.is_anonymous
+            and Favorites.objects.filter(user=user, recipe=obj).exists()
+        )
 
     def get_is_in_shopping_cart(self, obj):
-        """Проверка наличия рецепта в списке покупок"""
+        """Проверка наличия рецепта в списке покупок."""
         user = self.context.get("request").user
-        if user.is_anonymous:
-            return False
-        return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
+        return (
+            not user.is_anonymous
+            and ShoppingCart.objects.filter(user=user, recipe=obj).exists()
+        )
+
+    def to_representation(self, instance):
+        """Преобразуем данные перед отправкой на фронтенд."""
+        representation = super().to_representation(instance)
+
+        # Преобразуем теги в нужный формат
+        representation["tags"] = [
+            {"name": tag.name, "slug": tag.slug} for tag in instance.tags.all()
+        ]
+
+        # Преобразуем ингредиенты в нужный формат
+        representation["ingredients"] = [
+            {
+                "name": ingredient.name,
+                "measurement_unit": ingredient.measurement_unit,
+            }
+            for ingredient in instance.ingredients.all()
+        ]
+
+        return representation
 
     def validate(self, data):
         request = self.context.get("request")
@@ -185,7 +207,6 @@ class RecipeSerializer(ModelSerializer):
         tags = self.initial_data.get("tags", [])
         name = data.get("name")
         cooking_time = data.get("cooking_time")
-        image = data.get("image")
 
         # Проверка авторизации пользователя
         if not request.user.is_authenticated:
@@ -193,31 +214,32 @@ class RecipeSerializer(ModelSerializer):
                 {"detail": "Пользователь не авторизован"}, code=401
             )
 
-        # Проверка наличия ингредиентов
+        # Проверка наличия ингредиентов и тегов
+        self.check_ingredients_and_tags(ingredients, tags)
+
+        # Проверка времени приготовления
+        if not isinstance(cooking_time, int) or cooking_time <= 0:
+            raise ValidationError(
+                "Время должно быть положительным целым числом"
+            )
+
+        # Проверка на существование рецепта с таким же именем
+        self.check_recipe_name_uniqueness(name, request)
+
+        return data
+
+    def check_ingredients_and_tags(self, ingredients, tags):
+        """Проверка ингредиентов и тегов на существование и корректность."""
         if not ingredients:
             raise ValidationError(
                 {"ingredients": "В рецепте отсутствуют ингредиенты"}
             )
-
-        # Проверка наличия тегов
         if not tags:
             raise ValidationError({"tags": "В рецепте отсутствуют теги"})
 
-        # Проверка наличия изображения
-        if not image:
-            raise ValidationError({"image": "Поле image не может быть пустым"})
-
-        # Проверка уникальности тегов и их преобразование
-        tag_slugs = []
-        for tag_id in tags:
-            tag = get_object_or_404(Tag, id=tag_id)
-            tag_slugs.append({"slug": tag.slug, "name": tag.name})
-
         # Проверка существования всех тегов
-        existing_tags = Tag.objects.filter(
-            slug__in=[tag["slug"] for tag in tag_slugs]
-        )
-        if len(existing_tags) != len(tag_slugs):
+        existing_tags = Tag.objects.filter(id__in=tags)
+        if len(existing_tags) != len(tags):
             raise ValidationError({"tags": "Некоторые теги не существуют"})
 
         # Проверка ингредиентов
@@ -234,116 +256,90 @@ class RecipeSerializer(ModelSerializer):
                     {"ingredients": f"Ингредиента с id {ingredient_id} нет"}
                 )
 
-            try:
-                amount = int(amount)
-                if amount <= 0:
-                    raise ValidationError(
-                        "Количество ингредиента должно быть положительным"
-                    )
-            except (ValueError, TypeError):
+            if not isinstance(amount, int) or amount <= 0:
                 raise ValidationError(
-                    "Количество ингредиента должно быть целым числом"
+                    "Количество ингредиента должно быть больше 0"
                 )
 
             ingredient_ids.add(ingredient_id)
 
-        # Проверка времени приготовления
-        try:
-            cooking_time = int(cooking_time)
-            if cooking_time <= 0:
-                raise ValidationError(
-                    "Время должно быть положительным целым числом"
-                )
-        except (ValueError, TypeError):
-            raise ValidationError(
-                "Время приготовления должно быть целым числом"
-            )
-
-        # Проверка на существование рецепта с таким же именем
-        recipe_id = self.context.get("view").kwargs.get(
-            "pk"
-        )  # Получаем ID рецепта из URL
-        if recipe_id:
-            # Если это обновление, пропускаем проверку
-            existing_recipe = (
-                Recipe.objects.filter(name=name, author=request.user)
-                .exclude(id=recipe_id)
-                .exists()
-            )
-        else:
-            # Если это создание, просто проверяем
-            existing_recipe = Recipe.objects.filter(
-                name=name, author=request.user
-            ).exists()
-
-        if existing_recipe:
+    def check_recipe_name_uniqueness(self, name, request):
+        """Проверка на существование рецепта с таким же именем."""
+        recipe_id = self.context.get("view").kwargs.get("pk")
+        if (
+            recipe_id
+            and Recipe.objects.filter(name=name, author=request.user)
+            .exclude(id=recipe_id)
+            .exists()
+        ):
             raise ValidationError(
                 {"name": "Рецепт с таким именем уже существует"}
             )
 
-        return data
-
     def create_ingredients(self, ingredients, recipe):
         """Добавление ингредиентов."""
-        for ingredient in ingredients:
-            ingredient_instance = get_object_or_404(
-                Ingredient, id=ingredient["id"]
-            )
-            amount = ingredient["amount"]
+        for ingredient_item in ingredients:
+            ingredient_id = ingredient_item["id"]
+            amount = ingredient_item["amount"]
+            ingredient = get_object_or_404(Ingredient, id=ingredient_id)
+
+            if amount <= 0:
+                raise ValidationError(
+                    "Количество ингредиента должно быть положительным целым числом"
+                )
+
             existing_recipe_ingredient = RecipeIngredient.objects.filter(
                 recipe=recipe,
-                ingredients=ingredient_instance,
+                ingredient=ingredient,
             ).first()
 
             if existing_recipe_ingredient:
-                amount += existing_recipe_ingredient.amount
-                existing_recipe_ingredient.amount = amount
+                existing_recipe_ingredient.amount += amount
                 existing_recipe_ingredient.save()
             else:
                 RecipeIngredient.objects.create(
                     recipe=recipe,
-                    ingredients=ingredient_instance,
+                    ingredient=ingredient,
                     amount=amount,
                 )
 
     def create_tags(self, tags, recipe):
         """Добавление тегов."""
-        tag_slugs = [tag["slug"] for tag in tags]
-        existing_tags = Tag.objects.filter(slug__in=tag_slugs)
+        tag_ids = [tag["id"] for tag in tags]
+        existing_tags = Tag.objects.filter(id__in=tag_ids)
         recipe.tags.set(existing_tags)
 
     @transaction.atomic
     def create(self, validated_data):
-        # Извлекаем теги и ингредиенты из validated_data
+        """Создание нового рецепта."""
         tags_data = validated_data.pop("tags", [])
         ingredients_data = validated_data.pop("ingredients", [])
         image = validated_data.pop("image", None)
         recipe = Recipe.objects.create(image=image, **validated_data)
 
-        self.create_ingredients(ingredients_data, recipe)
         self.create_tags(tags_data, recipe)
-
+        self.create_ingredients(ingredients_data, recipe)
         return recipe
 
     @transaction.atomic
     def update(self, recipe, validated_data):
-        # Извлекаем ингредиенты и теги из validated_data
+        """Обновление существующего рецепта."""
         ingredients = validated_data.pop("ingredients", [])
         tags = validated_data.pop("tags", [])
-        # Получаем теги по их ID и создаем список словарей с slug и name
-        tag_slugs = []
-        for tag_id in tags:
-            tag = get_object_or_404(Tag, id=tag_id)
-            tag_slugs.append({"slug": tag.slug, "name": tag.name})
 
-        # Удаляем старые ингредиенты и теги
-        RecipeIngredient.objects.filter(recipe=recipe).delete()
-        recipe.tags.clear()
+        for attr, value in validated_data.items():
+            setattr(recipe, attr, value)
+        recipe.save()
 
-        self.create_tags(tag_slugs, recipe)
-        self.create_ingredients(ingredients, recipe)
+        if ingredients:
+            recipe.recipe_ingredients.all().delete()
+            self.create_ingredients(ingredients, recipe)
 
-        return super().update(recipe, validated_data)
+        if tags:
+            recipe.tags.clear()
+            self.create_tags(tags, recipe)
+
+        return recipe
 
 
 class AvatarSerializer(ModelSerializer):
