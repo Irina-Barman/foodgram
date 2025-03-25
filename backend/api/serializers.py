@@ -107,8 +107,7 @@ class TagSerializer(ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = "__all__"
-        read_only_fields = ("id", "name", "slug")
+        fields = ["id", "name", "slug"]
 
 
 class IngredientSerializer(ModelSerializer):
@@ -143,9 +142,7 @@ class RecipeSerializer(ModelSerializer):
     """Сериализатор модели рецепта."""
 
     image = Base64ImageField()
-    tags = TagSerializer(
-        many=True
-    )  # Изменено на many=True, чтобы принимать массив тегов
+    tags = TagSerializer(many=True, read_only=True)
     ingredients = RecipeIngredientSerializer(
         many=True, source="recipe_ingredients", read_only=True
     )
@@ -183,9 +180,6 @@ class RecipeSerializer(ModelSerializer):
         return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
 
     def validate(self, data):
-        """
-        Метод для валидации данных перед созданием или обновлением рецепта.
-        """
         request = self.context.get("request")
         ingredients = self.initial_data.get("ingredients", [])
         tags = self.initial_data.get("tags", [])
@@ -198,33 +192,28 @@ class RecipeSerializer(ModelSerializer):
                 {"detail": "Пользователь не авторизован"}, code=401
             )
 
-        if (
-            not ingredients
-            or not isinstance(ingredients, list)
-            or len(ingredients) == 0
-        ):
+        if not ingredients:
             raise ValidationError(
                 {"ingredients": "В рецепте отсутствуют ингредиенты"}
             )
 
         if not tags:
             raise ValidationError({"tags": "В рецепте отсутствуют теги"})
+
         if not image:
             raise ValidationError({"image": "Поле image не может быть пустым"})
+
+        # Проверка уникальности тегов
+        tag_slugs = {tag.get("slug") for tag in tags}
+        existing_tags = Tag.objects.filter(slug__in=tag_slugs)
+        if len(existing_tags) != len(tag_slugs):
+            raise ValidationError({"tags": "Некоторые теги не существуют"})
 
         # Проверка ингредиентов
         ingredient_ids = set()
         for ingredient_item in ingredients:
             ingredient_id = ingredient_item.get("id")
             amount = ingredient_item.get("amount")
-
-            # Преобразование amount в целое число
-            try:
-                amount = int(amount)
-            except (ValueError, TypeError):
-                raise ValidationError(
-                    "Количество ингредиента должно быть целым числом"
-                )
 
             if ingredient_id in ingredient_ids:
                 raise ValidationError("Ингредиент уже добавлен в рецепт")
@@ -234,37 +223,31 @@ class RecipeSerializer(ModelSerializer):
                     {"ingredients": f"Ингредиента с id {ingredient_id} нет"}
                 )
 
-            if amount <= 0:
+            try:
+                amount = int(amount)
+                if amount <= 0:
+                    raise ValidationError(
+                        "Количество ингредиента должно быть положительным"
+                    )
+            except (ValueError, TypeError):
                 raise ValidationError(
-                    "Количество ингредиента должно быть положительным"
+                    "Количество ингредиента должно быть целым числом"
                 )
 
             ingredient_ids.add(ingredient_id)
-        # Проверка тегов
-        tag_slugs = [
-            tag["slug"] for tag in tags
-        ]  # Предполагается, что тег имеет поле slug
-        existing_tags = Tag.objects.filter(slug__in=tag_slugs).values_list(
-            "slug", flat=True
-        )
 
-        for tag in tag_slugs:
-            if tag not in existing_tags:
-                raise ValidationError(
-                    {"tags": f"Тег с slug '{tag}' не существует"}
-                )
-        # Преобразование cooking_time в целое число
+        # Проверка времени приготовления
         try:
             cooking_time = int(cooking_time)
+            if cooking_time <= 0:
+                raise ValidationError(
+                    "Время должно быть положительным целым числом"
+                )
         except (ValueError, TypeError):
             raise ValidationError(
                 "Время приготовления должно быть целым числом"
             )
 
-        if cooking_time <= 0:
-            raise ValidationError(
-                "Время приготовления должно быть положительным целым числом"
-            )
         # Проверка на существование рецепта с таким же именем
         recipe_id = self.context.get("view").kwargs.get(
             "pk"
@@ -312,6 +295,12 @@ class RecipeSerializer(ModelSerializer):
                     amount=amount,
                 )
 
+    def create_tags(self, tags, recipe):
+        """Добавление тегов."""
+        tag_slugs = [tag["slug"] for tag in tags]
+        existing_tags = Tag.objects.filter(slug__in=tag_slugs)
+        recipe.tags.set(existing_tags)
+
     @transaction.atomic
     def create(self, validated_data):
         """Создание рецепта."""
@@ -321,7 +310,9 @@ class RecipeSerializer(ModelSerializer):
 
         recipe = Recipe.objects.create(image=image, **validated_data)
         self.create_ingredients(ingredients_data, recipe)
-        recipe.tags.set(tags_data)
+        self.create_tags(
+            tags_data, recipe
+        )  # Добавляем вызов для создания тегов
         return recipe
 
     @transaction.atomic
@@ -330,9 +321,14 @@ class RecipeSerializer(ModelSerializer):
         ingredients = validated_data.pop("ingredients", [])
         tags = validated_data.pop("tags", [])
 
+        # Удаляем старые ингредиенты и теги
         RecipeIngredient.objects.filter(recipe=recipe).delete()
+        recipe.tags.clear()
+
+        # Создаем новые ингредиенты и теги
         self.create_ingredients(ingredients, recipe)
-        recipe.tags.set(tags)
+        self.create_tags(tags, recipe)  # Обновляем теги
+
         return super().update(recipe, validated_data)
 
 
