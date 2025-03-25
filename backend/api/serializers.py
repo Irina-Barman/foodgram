@@ -246,7 +246,7 @@ class RecipeSerializer(ModelSerializer):
         ingredient_ids = set()
         for ingredient_item in ingredients:
             ingredient_id = ingredient_item.get("id")
-            amount = ingredient_item.get("amount")
+            amount = int(ingredient_item.get("amount"))
 
             if ingredient_id in ingredient_ids:
                 raise ValidationError("Ингредиент уже добавлен в рецепт")
