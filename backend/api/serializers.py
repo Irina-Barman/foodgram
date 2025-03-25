@@ -187,25 +187,36 @@ class RecipeSerializer(ModelSerializer):
         cooking_time = data.get("cooking_time")
         image = data.get("image")
 
+        # Проверка авторизации пользователя
         if not request.user.is_authenticated:
             raise ValidationError(
                 {"detail": "Пользователь не авторизован"}, code=401
             )
 
+        # Проверка наличия ингредиентов
         if not ingredients:
             raise ValidationError(
                 {"ingredients": "В рецепте отсутствуют ингредиенты"}
             )
 
+        # Проверка наличия тегов
         if not tags:
             raise ValidationError({"tags": "В рецепте отсутствуют теги"})
 
+        # Проверка наличия изображения
         if not image:
             raise ValidationError({"image": "Поле image не может быть пустым"})
 
-        # Проверка уникальности тегов
-        tag_slugs = {tag.get("slug") for tag in tags}
-        existing_tags = Tag.objects.filter(slug__in=tag_slugs)
+        # Проверка уникальности тегов и их преобразование
+        tag_slugs = []
+        for tag_id in tags:
+            tag = get_object_or_404(Tag, id=tag_id)
+            tag_slugs.append({"slug": tag.slug, "name": tag.name})
+
+        # Проверка существования всех тегов
+        existing_tags = Tag.objects.filter(
+            slug__in=[tag["slug"] for tag in tag_slugs]
+        )
         if len(existing_tags) != len(tag_slugs):
             raise ValidationError({"tags": "Некоторые теги не существуют"})
 
@@ -303,31 +314,34 @@ class RecipeSerializer(ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        """Создание рецепта."""
+        # Извлекаем теги и ингредиенты из validated_data
         tags_data = validated_data.pop("tags", [])
         ingredients_data = validated_data.pop("ingredients", [])
         image = validated_data.pop("image", None)
-
         recipe = Recipe.objects.create(image=image, **validated_data)
+
         self.create_ingredients(ingredients_data, recipe)
-        self.create_tags(
-            tags_data, recipe
-        )  # Добавляем вызов для создания тегов
+        self.create_tags(tags_data, recipe)
+
         return recipe
 
     @transaction.atomic
     def update(self, recipe, validated_data):
-        """Обновление существующего рецепта."""
+        # Извлекаем ингредиенты и теги из validated_data
         ingredients = validated_data.pop("ingredients", [])
         tags = validated_data.pop("tags", [])
+        # Получаем теги по их ID и создаем список словарей с slug и name
+        tag_slugs = []
+        for tag_id in tags:
+            tag = get_object_or_404(Tag, id=tag_id)
+            tag_slugs.append({"slug": tag.slug, "name": tag.name})
 
         # Удаляем старые ингредиенты и теги
         RecipeIngredient.objects.filter(recipe=recipe).delete()
         recipe.tags.clear()
 
-        # Создаем новые ингредиенты и теги
+        self.create_tags(tag_slugs, recipe)
         self.create_ingredients(ingredients, recipe)
-        self.create_tags(tags, recipe)  # Обновляем теги
 
         return super().update(recipe, validated_data)
 
