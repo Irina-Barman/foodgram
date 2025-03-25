@@ -305,7 +305,7 @@ class RecipeSerializer(ModelSerializer):
 
     def create_tags(self, tags, recipe):
         """Добавление тегов."""
-        tag_ids = [tag["id"] for tag in tags]
+        tag_ids = [tag.id for tag in tags]
         existing_tags = Tag.objects.filter(id__in=tag_ids)
         recipe.tags.set(existing_tags)
 
@@ -325,7 +325,7 @@ class RecipeSerializer(ModelSerializer):
     def update(self, recipe, validated_data):
         """Обновление существующего рецепта."""
         ingredients = validated_data.pop("ingredients", [])
-        tags = validated_data.pop("tags", [])
+        tags = validated_data.pop('tags', None)
 
         for attr, value in validated_data.items():
             setattr(recipe, attr, value)
