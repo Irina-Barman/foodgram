@@ -151,12 +151,12 @@ class RecipeViewSet(ModelViewSet):
     pagination_class = LimitPagePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = RecipeFilter
-    filterset_fields = [
-        "author",
-        "tags",
-        "is_favorited",
-        "is_in_shopping_cart",
-    ]
+    # filterset_fields = [
+    #     "author",
+    #     "tags",
+    #     "is_favorited",
+    #     "is_in_shopping_cart",
+    # ]
     permission_classes = [IsOwnerOrReadOnly]
 
     def perform_create(self, serializer):
