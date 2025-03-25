@@ -1,12 +1,11 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Q
 from django_filters.rest_framework import (
     BooleanFilter,
     FilterSet,
     ModelChoiceFilter,
-    MultipleChoiceFilter,
+    ModelMultipleChoiceFilter,
 )
-from recipes.models import Recipe
+from recipes.models import Recipe, Tag
 from rest_framework.filters import SearchFilter
 
 User = get_user_model()
@@ -16,7 +15,11 @@ class RecipeFilter(FilterSet):
     """Фильтр для сортировки рецептов."""
 
     author = ModelChoiceFilter(queryset=User.objects.all())
-    tags = MultipleChoiceFilter(field_name="tags__slug", required=False)
+    tags = ModelMultipleChoiceFilter(
+        field_name='tags__slug',
+        to_field_name='slug',
+        queryset=Tag.objects.all(),
+    )
     is_favorited = BooleanFilter(method="filter_is_favorited")
     is_in_shopping_cart = BooleanFilter(method="filter_is_in_shopping_cart")
 
@@ -36,14 +39,6 @@ class RecipeFilter(FilterSet):
         request = self.request
         if request and request.user.is_authenticated and value:
             return queryset.filter(shopping_cart__user=request.user)
-        return queryset
-
-    def filter_tags(self, queryset, name, value):
-        """Фильтрация по тегам, одиночный и множественный выбор."""
-        if value:
-            return queryset.filter(
-                Q(tags__slug=value) | Q(tags__slug__in=value)
-            ).distinct()
         return queryset
 
 
