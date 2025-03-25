@@ -285,7 +285,7 @@ class RecipeSerializer(ModelSerializer):
 
             if amount <= 0:
                 raise ValidationError(
-                    "Количество ингредиента должно быть положительным целым числом"
+                    "Кол-во ингредиента должно быть положительным целым числом"
                 )
 
             existing_recipe_ingredient = RecipeIngredient.objects.filter(
