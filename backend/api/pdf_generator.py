@@ -1,7 +1,5 @@
 from django.http import HttpResponse
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 
@@ -27,8 +25,6 @@ def generate_pdf(shopping_cart_items):
     p = canvas.Canvas(response, pagesize=letter)
     width, height = letter
 
-    # Регистрация шрифта
-    pdfmetrics.registerFont(TTFont("Helvetica", "Helvetica.ttf"))
     p.setFont("Helvetica", 12)
 
     p.drawString(100, height - 50, "Список покупок")
