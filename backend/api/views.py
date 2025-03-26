@@ -1,12 +1,8 @@
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse
+from django.http import JsonResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from recipes.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
@@ -22,6 +18,7 @@ from users.models import Subscription
 
 from .filters import IngredientSearchFilter, RecipeFilter
 from .pagination import LimitPagePagination
+from .pdf_generator import generate_pdf
 from .permissions import IsOwnerOrReadOnly
 from .serializers import (
     AvatarSerializer,
@@ -176,49 +173,12 @@ class RecipeViewSet(ModelViewSet):
     )
     def download_shopping_cart(self, request):
         if not request.user.is_authenticated:
-            return Response(
+            return JsonResponse(
                 {"detail": "Пользователь не авторизован."},
-                status=status.HTTP_401_UNAUTHORIZED,
+                status=401,
             )
-
         shopping_cart_items = ShoppingCart.objects.filter(user=request.user)
-        ingredients_dict = {}
-
-        for item in shopping_cart_items:
-            recipe = item.recipe
-            for recipe_ingredients in recipe.recipe_ingredients.all():
-                ingredient = recipe_ingredients.ingredient
-                amount = recipe_ingredients.amount
-
-                if ingredient.name in ingredients_dict:
-                    ingredients_dict[ingredient.name] += amount
-                else:
-                    ingredients_dict[ingredient.name] = amount
-
-        response = HttpResponse(content_type="application/pdf")
-        response["Content-Disposition"] = (
-            'attachment; filename="shopping_cart.pdf"'
-        )
-
-        p = canvas.Canvas(response, pagesize=letter)
-        width, height = letter
-
-        # Регистрация шрифта
-        pdfmetrics.registerFont(TTFont("Helvetica", "Helvetica.ttf"))
-        p.setFont("Helvetica", 12)
-
-        p.drawString(100, height - 50, "Список покупок")
-
-        y_position = height - 80
-
-        for ingredient_name, total_amount in ingredients_dict.items():
-            p.drawString(100, y_position, f"{ingredient_name}: {total_amount}")
-            y_position -= 20
-
-        p.showPage()
-        p.save()
-
-        return response
+        return generate_pdf(shopping_cart_items)
 
 
 class FavoritesViewSet(ModelViewSet):
