@@ -324,17 +324,20 @@ class RecipeSerializer(ModelSerializer):
         ingredients = validated_data.pop("ingredients", [])
         tags = validated_data.pop("tags", None)
 
+        # Обновляем основные атрибуты рецепта
         for attr, value in validated_data.items():
             setattr(recipe, attr, value)
         recipe.save()
 
+        # Обновляем ингредиенты
         if ingredients:
+            # Удаляем существующие ингредиенты
             recipe.recipe_ingredients.all().delete()
             self.create_ingredients(ingredients, recipe)
 
+        # Обновляем теги
         if tags:
-            recipe.tags.clear()
-            self.create_tags(tags, recipe)
+            recipe.tags.set(tags)  # Используем метод set для обновления тегов
 
         return recipe
 
