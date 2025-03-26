@@ -144,7 +144,7 @@ class RecipeSerializer(ModelSerializer):
     image = Base64ImageField()
     tags = PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())
     ingredients = RecipeIngredientSerializer(
-        many=True, source="recipe_ingredients", read_only=True
+        many=True, source="recipe_ingredients"
     )
     author = CustomUserSerializer(read_only=True)
     is_favorited = SerializerMethodField(read_only=True)
@@ -193,8 +193,8 @@ class RecipeSerializer(ModelSerializer):
         # Преобразуем ингредиенты в нужный формат
         representation["ingredients"] = [
             {
-                "name": ingredient.ingredient.name,
-                "measurement_unit": ingredient.ingredient.measurement_unit,
+                "name": ingredient.name,
+                "measurement_unit": ingredient.measurement_unit,
             }
             for ingredient in instance.ingredients.all()
         ]
@@ -325,7 +325,7 @@ class RecipeSerializer(ModelSerializer):
     def update(self, recipe, validated_data):
         """Обновление существующего рецепта."""
         ingredients = validated_data.pop("ingredients", [])
-        tags = validated_data.pop('tags', None)
+        tags = validated_data.pop("tags", None)
 
         for attr, value in validated_data.items():
             setattr(recipe, attr, value)
