@@ -1,10 +1,10 @@
-import csv
-
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from recipes.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
@@ -179,8 +179,10 @@ class RecipeViewSet(ModelViewSet):
                 {"detail": "Пользователь не авторизован."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
+        
         shopping_cart_items = ShoppingCart.objects.filter(user=request.user)
         ingredients_dict = {}
+        
         for item in shopping_cart_items:
             recipe = item.recipe
             for recipe_ingredients in recipe.recipe_ingredients.all():
@@ -192,16 +194,28 @@ class RecipeViewSet(ModelViewSet):
                 else:
                     ingredients_dict[ingredient.name] = amount
 
-        response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = (
-            'attachment; filename="shopping_cart.csv"'
-        )
+        # Создание PDF-ответа
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="shopping_cart.pdf"'
 
-        writer = csv.writer(response)
-        writer.writerow(["Ingredient", "Total Amount"])
+        # Создание PDF с помощью reportlab
+        p = canvas.Canvas(response, pagesize=letter)
+        width, height = letter
 
+        # Заголовок
+        p.drawString(100, height - 50, "Список покупок")
+
+        # Начальная позиция для ингредиентов
+        y_position = height - 80
+
+        # Запись ингредиентов в PDF
         for ingredient_name, total_amount in ingredients_dict.items():
-            writer.writerow([ingredient_name, total_amount])
+            p.drawString(100, y_position, f"{ingredient_name}: {total_amount}")
+            y_position -= 20  # Позиция для следующей строки
+
+        p.showPage()
+        p.save()
+
         return response
 
 
