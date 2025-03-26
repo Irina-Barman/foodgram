@@ -190,14 +190,11 @@ class RecipeSerializer(ModelSerializer):
             {"name": tag.name, "slug": tag.slug} for tag in instance.tags.all()
         ]
 
-        # Преобразуем ингредиенты в нужный формат
-        representation["ingredients"] = [
-            {
-                "name": ingredient.name,
-                "measurement_unit": ingredient.measurement_unit,
-            }
-            for ingredient in instance.ingredients.all()
-        ]
+        # Используем RecipeIngredientSerializer для сериализации ингредиентов
+        ingredients_serializer = RecipeIngredientSerializer(
+            instance.recipe_ingredients.all(), many=True
+        )
+        representation["ingredients"] = ingredients_serializer.data
 
         return representation
 
