@@ -25,7 +25,7 @@ def generate_pdf(shopping_cart_items):
     p = canvas.Canvas(response, pagesize=letter)
     width, height = letter
 
-    p.setFont("Helvetica", 12)
+    p.setFont("Helvetica-Bold", 12)
 
     p.drawString(100, height - 50, "Список покупок")
 
