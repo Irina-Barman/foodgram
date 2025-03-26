@@ -143,7 +143,6 @@ class RecipeListSerializer(ModelSerializer):
     """
 
     author = CustomUserSerializer()
-    author_avatar = ImageField(source="author.avatar", read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     ingredients = RecipeIngredientSerializer(
         many=True, source="recipe_ingredients", read_only=True
@@ -157,7 +156,6 @@ class RecipeListSerializer(ModelSerializer):
             "id",
             "tags",
             "author",
-            "author_avatar",
             "ingredients",
             "is_favorited",
             "is_in_shopping_cart",
