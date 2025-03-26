@@ -127,10 +127,8 @@ class RecipeIngredientSerializer(ModelSerializer):
     """Сериализатор для ингредиентов в рецепте."""
 
     id = PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-    name = CharField(source="ingredient.name", read_only=True)
-    measurement_unit = CharField(
-        source="ingredient.measurement_unit", read_only=True
-    )
+    name = CharField(source="ingredient.name")
+    measurement_unit = CharField(source="ingredient.measurement_unit")
     amount = IntegerField()
 
     class Meta:
@@ -212,7 +210,7 @@ class RecipeSerializer(ModelSerializer):
             )
 
         # Проверка наличия ингредиентов и тегов
-        self.check_ingredients_and_tags(ingredients, tags)
+        self.validate_ingredients_and_tags_existence(ingredients, tags)
 
         # Проверка времени приготовления
         if not isinstance(cooking_time, int) or cooking_time <= 0:
@@ -225,7 +223,7 @@ class RecipeSerializer(ModelSerializer):
 
         return data
 
-    def check_ingredients_and_tags(self, ingredients, tags):
+    def validate_ingredients_and_tags_existence(self, ingredients, tags):
         """Проверка ингредиентов и тегов на существование и корректность."""
         if not ingredients:
             raise ValidationError(
@@ -234,12 +232,13 @@ class RecipeSerializer(ModelSerializer):
         if not tags:
             raise ValidationError({"tags": "В рецепте отсутствуют теги"})
 
-        # Проверка существования всех тегов
-        existing_tags = Tag.objects.filter(id__in=tags)
+        # Получаем существующие теги
+        existing_tags = set(
+            Tag.objects.filter(id__in=tags).values_list("id", flat=True)
+        )
         if len(existing_tags) != len(tags):
             raise ValidationError({"tags": "Некоторые теги не существуют"})
 
-        # Проверка ингредиентов
         ingredient_ids = set()
         for ingredient_item in ingredients:
             ingredient_id = ingredient_item.get("id")
@@ -248,6 +247,7 @@ class RecipeSerializer(ModelSerializer):
             if ingredient_id in ingredient_ids:
                 raise ValidationError("Ингредиент уже добавлен в рецепт")
 
+            # Проверяем существование ингредиента
             if not Ingredient.objects.filter(id=ingredient_id).exists():
                 raise ValidationError(
                     {"ingredients": f"Ингредиента с id {ingredient_id} нет"}
