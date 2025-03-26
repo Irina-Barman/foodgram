@@ -12,7 +12,7 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
     get_object_or_404,
 )
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -26,7 +26,8 @@ from .serializers import (
     CustomUserSerializer,
     FavoritesSerializer,
     IngredientSerializer,
-    RecipeSerializer,
+    RecipeListSerializer,
+    RecipeWriteSerializer,
     ShoppingCartSerializer,
     SubscriptionSerializer,
     TagSerializer,
@@ -145,19 +146,16 @@ class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
 
 class RecipeViewSet(ModelViewSet):
     """Вьюсет для модели рецепта."""
-
-    serializer_class = RecipeSerializer
     queryset = Recipe.objects.all()
     pagination_class = LimitPagePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = RecipeFilter
-    # filterset_fields = [
-    #     "author",
-    #     "tags",
-    #     "is_favorited",
-    #     "is_in_shopping_cart",
-    # ]
     permission_classes = [IsOwnerOrReadOnly]
+    
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return RecipeListSerializer
+        return RecipeWriteSerializer
 
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
