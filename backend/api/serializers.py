@@ -142,7 +142,7 @@ class RecipeListSerializer(ModelSerializer):
     amount из промежуточной модели.
     """
 
-    author = UserSerializer()
+    author = CustomUserSerializer()
     author_avatar = ImageField(source="author.avatar", read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     ingredients = RecipeIngredientSerializer(
