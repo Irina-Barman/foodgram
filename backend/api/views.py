@@ -179,10 +179,10 @@ class RecipeViewSet(ModelViewSet):
                 {"detail": "Пользователь не авторизован."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-        
+
         shopping_cart_items = ShoppingCart.objects.filter(user=request.user)
         ingredients_dict = {}
-        
+
         for item in shopping_cart_items:
             recipe = item.recipe
             for recipe_ingredients in recipe.recipe_ingredients.all():
@@ -195,8 +195,10 @@ class RecipeViewSet(ModelViewSet):
                     ingredients_dict[ingredient.name] = amount
 
         # Создание PDF-ответа
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.pdf"'
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = (
+            'attachment; filename="shopping_cart.pdf"'
+        )
 
         # Создание PDF с помощью reportlab
         p = canvas.Canvas(response, pagesize=letter)
