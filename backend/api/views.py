@@ -4,6 +4,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from recipes.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
 from reportlab.lib.pagesizes import letter
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from rest_framework import filters, status
 from rest_framework.decorators import action
@@ -173,7 +175,6 @@ class RecipeViewSet(ModelViewSet):
         detail=False, methods=["get"], permission_classes=[IsAuthenticated]
     )
     def download_shopping_cart(self, request):
-        """Скачивает список покупок с суммированием ингредиентов."""
         if not request.user.is_authenticated:
             return Response(
                 {"detail": "Пользователь не авторизован."},
@@ -194,26 +195,25 @@ class RecipeViewSet(ModelViewSet):
                 else:
                     ingredients_dict[ingredient.name] = amount
 
-        # Создание PDF-ответа
         response = HttpResponse(content_type="application/pdf")
         response["Content-Disposition"] = (
             'attachment; filename="shopping_cart.pdf"'
         )
 
-        # Создание PDF с помощью reportlab
         p = canvas.Canvas(response, pagesize=letter)
         width, height = letter
 
-        # Заголовок
+        # Регистрация шрифта
+        pdfmetrics.registerFont(TTFont("Helvetica", "Helvetica.ttf"))
+        p.setFont("Helvetica", 12)
+
         p.drawString(100, height - 50, "Список покупок")
 
-        # Начальная позиция для ингредиентов
         y_position = height - 80
 
-        # Запись ингредиентов в PDF
         for ingredient_name, total_amount in ingredients_dict.items():
             p.drawString(100, y_position, f"{ingredient_name}: {total_amount}")
-            y_position -= 20  # Позиция для следующей строки
+            y_position -= 20
 
         p.showPage()
         p.save()
