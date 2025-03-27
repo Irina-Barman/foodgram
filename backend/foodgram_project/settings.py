@@ -32,7 +32,7 @@ INSTALLED_APPS = [
     "users",
     "recipes",
     "data",
-    "sevices",
+    "services",
 ]
 
 MIDDLEWARE = [
