@@ -170,6 +170,18 @@ jobs:
           target: foodgram/
           debug: true
 
+      - name: Copy Arial.ttf via SSH
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          source: "backend/services/Arial.ttf"
+          target: foodgram/
+          debug: true
+
+
       - name: Executing Remote SSH Commands to Deploy
         uses:
           appleboy/ssh-action@master
