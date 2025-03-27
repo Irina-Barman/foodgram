@@ -18,9 +18,12 @@ def generate_pdf(shopping_cart_items):
             amount = recipe_ingredients.amount
 
             if ingredient.name in ingredients_dict:
-                ingredients_dict[ingredient.name] += amount
+                ingredients_dict[ingredient.name]['amount'] += amount
             else:
-                ingredients_dict[ingredient.name] = amount
+                ingredients_dict[ingredient.name] = {
+                    'amount': amount,
+                    'unit': ingredient.measurement_unit
+                }
 
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = (
