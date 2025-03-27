@@ -20,10 +20,10 @@ def generate_pdf(shopping_cart_items):
             if ingredient.name in ingredients_dict:
                 ingredients_dict[ingredient.name]["amount"] += amount
             else:
-                ingredients_dict[ingredient.name] = (
-                    amount,
-                    ingredient.measurement_unit,
-                )
+                ingredients_dict[ingredient.name] = {
+                    "amount": amount,
+                    "unit": ingredient.measurement_unit,
+                }
 
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = (
@@ -41,8 +41,12 @@ def generate_pdf(shopping_cart_items):
 
     y_position = height - 80
 
-    for ingredient_name, total_amount in ingredients_dict.items():
-        p.drawString(100, y_position, f"{ingredient_name}: {total_amount}")
+    for ingredient_name, details, total_amount in ingredients_dict.items():
+        total_amount = details["amount"]
+        unit = details["unit"]
+        p.drawString(
+            100, y_position, f"{ingredient_name}: {total_amount} {unit}"
+        )
         y_position -= 20
 
     p.showPage()
