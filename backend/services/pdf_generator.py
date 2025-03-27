@@ -41,7 +41,7 @@ def generate_pdf(shopping_cart_items):
 
     y_position = height - 80
 
-    for ingredient_name, details, total_amount in ingredients_dict.items():
+    for ingredient_name, details in ingredients_dict.items():
         total_amount = details["amount"]
         unit = details["unit"]
         p.drawString(
