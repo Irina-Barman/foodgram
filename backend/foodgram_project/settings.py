@@ -16,6 +16,9 @@ ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS", default="127.0.0.1, localhost"
 ).split(",")
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080"
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
