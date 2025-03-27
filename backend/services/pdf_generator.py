@@ -31,9 +31,7 @@ def generate_pdf(shopping_cart_items):
     width, height = letter
 
     # Регистрация шрифта Arial
-    pdfmetrics.registerFont(
-        TTFont("Arial", "Arial.ttf")
-    )
+    pdfmetrics.registerFont(TTFont("Arial", "/app/services/Arial.ttf"))
     p.setFont("Arial", 12)  # Установка шрифта Arial
 
     p.drawString(100, height - 50, "Список покупок")
