@@ -1,10 +1,15 @@
 from django.http import HttpResponse
 from reportlab.lib.pagesizes import letter
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 
 def generate_pdf(shopping_cart_items):
     ingredients_dict = {}
+
+    if not shopping_cart_items:
+        return HttpResponse("Ваша корзина пуста.", content_type="text/plain")
 
     for item in shopping_cart_items:
         recipe = item.recipe
@@ -25,7 +30,11 @@ def generate_pdf(shopping_cart_items):
     p = canvas.Canvas(response, pagesize=letter)
     width, height = letter
 
-    p.setFont("Times-Roman", 12)
+    # Регистрация шрифта Arial
+    pdfmetrics.registerFont(
+        TTFont("Arial", "foodgram/frontend/src/fonts/Arial.ttf")
+    )
+    p.setFont("Arial", 12)  # Установка шрифта Arial
 
     p.drawString(100, height - 50, "Список покупок")
 
