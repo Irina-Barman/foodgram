@@ -1,6 +1,3 @@
-import os
-
-from django.http import FileResponse, Http404
 from django.urls import include, path, re_path
 from rest_framework.routers import DefaultRouter
 
@@ -50,18 +47,5 @@ urlpatterns = [
         "users/me/avatar/",
         UserAvatarUpdateView.as_view(),
         name="user_avatar_update",
-    ),
-    path(
-        "api/docs/",
-        lambda request: FileResponse(
-            open(
-                os.path.join("D:\\Dev\\foodgram\\docs\\openapi-schema.yml"),
-                "rb",
-            ),
-            content_type="application/x-yaml",
-        )
-        if os.path.exists("foodgram\\docs\\openapi-schema.yml")
-        else Http404("Файл не найден"),
-        name="openapi-schema",
     ),
 ]
