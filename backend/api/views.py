@@ -14,11 +14,11 @@ from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+from services.pdf_generator import generate_pdf
 from users.models import Subscription
 
 from .filters import IngredientSearchFilter, RecipeFilter
 from .pagination import LimitPagePagination
-from .pdf_generator import generate_pdf
 from .permissions import IsOwnerOrReadOnly
 from .serializers import (
     AvatarSerializer,

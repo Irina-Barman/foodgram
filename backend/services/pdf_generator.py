@@ -32,7 +32,7 @@ def generate_pdf(shopping_cart_items):
 
     # Регистрация шрифта Arial
     pdfmetrics.registerFont(
-        TTFont("Arial", "foodgram/frontend/src/fonts/Arial.ttf")
+        TTFont("Arial", "Arial.ttf")
     )
     p.setFont("Arial", 12)  # Установка шрифта Arial
 
