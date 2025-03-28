@@ -16,9 +16,7 @@ ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS", default="127.0.0.1, localhost"
 ).split(",")
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080"
-]
+CORS_ALLOWED_ORIGINS = ["http://localhost:8080"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -49,7 +47,7 @@ MIDDLEWARE = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://ffoodgram.ddns.net',
+    "https://ffoodgram.ddns.net",
 ]
 
 ROOT_URLCONF = "foodgram_project.urls"

@@ -4,6 +4,7 @@ from rest_framework.response import Response
 
 class LimitPagePagination(PageNumberPagination):
     """Кастомная пагинация."""
+
     page_size = 6
     page_size_query_param = "limit"
     max_page_size = 100

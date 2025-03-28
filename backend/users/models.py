@@ -7,6 +7,7 @@ HELP_TEXT = "Обязательное поле. Максимальное кол�
 
 class CustomUser(AbstractUser):
     """Модель пользователя."""
+
     REQUIRED_FIELDS = ["id", "email", "first_name", "last_name"]
 
     username = models.CharField(
@@ -58,6 +59,7 @@ class CustomUser(AbstractUser):
 
 class Subscription(models.Model):
     """Модель подписки."""
+
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
@@ -72,7 +74,7 @@ class Subscription(models.Model):
     )
 
     class Meta:
-        ordering = ['-id']
+        ordering = ["-id"]
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "author"], name="subscriptions_unique"
