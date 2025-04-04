@@ -1,6 +1,8 @@
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+from api.constants import (MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH,
+                           MAX_USERNAME_LENGTH)
 
 HELP_TEXT = "Обязательное поле. Максимальное количество символов: "
 
@@ -11,40 +13,32 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = ["id", "email", "first_name", "last_name"]
 
     username = models.CharField(
-        max_length=getattr(settings, "MAX_USERNAME_LENGTH", 150),
+        max_length=MAX_USERNAME_LENGTH,
         unique=True,
         verbose_name="Логин пользователя",
-        help_text=(
-            f"{HELP_TEXT}{getattr(settings, 'MAX_USERNAME_LENGTH', 150)}"
-        ),
+        help_text=(f"{HELP_TEXT}{MAX_USERNAME_LENGTH}"),
     )
     password = models.CharField(
-        max_length=getattr(settings, "MAX_PASSWORD_LENGTH", 300),
+        max_length=MAX_PASSWORD_LENGTH,
         blank=False,
         verbose_name="Пароль пользователя",
-        help_text=(
-            f"{HELP_TEXT}{getattr(settings, 'MAX_PASSWORD_LENGTH', 300)}"
-        ),
+        help_text=(f"{HELP_TEXT}{MAX_PASSWORD_LENGTH}"),
     )
     email = models.EmailField(
-        max_length=getattr(settings, "MAX_EMAIL_LENGTH", 254),
+        max_length=MAX_EMAIL_LENGTH,
         unique=True,
         verbose_name="Электронная почта",
-        help_text=(f"{HELP_TEXT}{getattr(settings, 'MAX_EMAIL_LENGTH', 254)}"),
+        help_text=(f"{HELP_TEXT}{MAX_EMAIL_LENGTH}"),
     )
     first_name = models.CharField(
-        max_length=getattr(settings, "MAX_USERNAME_LENGTH", 150),
+        max_length=MAX_USERNAME_LENGTH,
         verbose_name="Имя пользователя",
-        help_text=(
-            f"{HELP_TEXT}{getattr(settings, 'MAX_USERNAME_LENGTH', 150)}"
-        ),
+        help_text=(f"{HELP_TEXT}{MAX_USERNAME_LENGTH}"),
     )
     last_name = models.CharField(
-        max_length=getattr(settings, "MAX_USERNAME_LENGTH", 150),
+        max_length=MAX_USERNAME_LENGTH,
         verbose_name="Фамилия пользователя",
-        help_text=(
-            f"{HELP_TEXT}{getattr(settings, 'MAX_USERNAME_LENGTH', 150)}"
-        ),
+        help_text=(f"{HELP_TEXT}{MAX_USERNAME_LENGTH}"),
     )
     avatar = models.ImageField(
         upload_to="users/", blank=True, null=True, verbose_name="Аватар"

@@ -1,7 +1,11 @@
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+
+from api.constants import (MAX_INGREDIENTS_NAME_LENGTH,
+                           MAX_RECIPES_NAME_LENGTH, MAX_TAG_LENGTH,
+                           MAX_TAG_SLUG_LENGTH, MAX_UNIT_LENGTH, MAX_VALUE,
+                           MIN_TIME, MIN_VALUE)
 
 User = get_user_model()
 
@@ -10,12 +14,12 @@ class Tag(models.Model):
     """Модель тэга."""
 
     name = models.CharField(
-        max_length=getattr(settings, "MAX_TAG_LENGTH", 32),
+        max_length=MAX_TAG_LENGTH,
         unique=True,
         verbose_name="Имя тэга",
     )
     slug = models.SlugField(
-        max_length=getattr(settings, "MAX_TAG_SLUG_LENGTH", 200),
+        max_length=MAX_TAG_SLUG_LENGTH,
         unique=True,
         verbose_name="Имя для ссылки",
     )
@@ -28,12 +32,12 @@ class Ingredient(models.Model):
     """Модель ингредиента."""
 
     name = models.CharField(
-        max_length=getattr(settings, "MAX_INGREDIENTS_NAME_LENGTH", 128),
+        max_length=MAX_INGREDIENTS_NAME_LENGTH,
         unique=True,
         verbose_name="Название ингредиента",
     )
     measurement_unit = models.CharField(
-        max_length=getattr(settings, "MAX_UNIT_LENGTH", 40),
+        max_length=MAX_UNIT_LENGTH,
         verbose_name="Единица измерения ингредиента",
         help_text="Укажите единицу измерения",
     )
@@ -59,7 +63,7 @@ class Recipe(models.Model):
         verbose_name="Автор рецепта",
     )
     name = models.CharField(
-        max_length=getattr(settings, "MAX_RECIPES_NAME_LENGTH", 256),
+        max_length=MAX_RECIPES_NAME_LENGTH,
         verbose_name="Название рецепта",
     )
     image = models.ImageField(
@@ -84,7 +88,7 @@ class Recipe(models.Model):
         verbose_name="Время приготовления (в минутах)",
         validators=[
             MinValueValidator(
-                getattr(settings, "MIN_TIME", 1),
+                MIN_TIME,
                 message=(
                     f"Время приготовления не может быть меньше "
                     f"{(getattr(settings, 'MIN_TIME', 1),)}",
@@ -139,7 +143,10 @@ class RecipeIngredient(models.Model):
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name="Количество",
-        validators=[MaxValueValidator(1000), MinValueValidator(1)],
+        validators=[
+            MaxValueValidator(MAX_VALUE),
+            MinValueValidator(MIN_VALUE),
+        ],
     )
 
     class Meta:
