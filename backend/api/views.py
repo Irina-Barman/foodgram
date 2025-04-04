@@ -34,7 +34,7 @@ class ShortLinkView(APIView):
         recipe = get_object_or_404(Recipe, id=id)
         base_url = request.build_absolute_uri("/")  # Получаем базовый URL
         short_link = (
-            f"{base_url}recipes/{recipe.id}/"  # Создание полной ссылки
+            f"{base_url}/{recipe.name}/"  # Создание полной ссылки
         )
         return Response({"short-link": short_link}, status=status.HTTP_200_OK)
 
