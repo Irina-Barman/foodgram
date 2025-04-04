@@ -1,8 +1,11 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from api.constants import (MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH,
-                           MAX_USERNAME_LENGTH)
+from api.constants import (
+    MAX_EMAIL_LENGTH,
+    MAX_PASSWORD_LENGTH,
+    MAX_USERNAME_LENGTH,
+)
 
 HELP_TEXT = "Обязательное поле. Максимальное количество символов: "
 

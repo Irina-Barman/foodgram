@@ -2,10 +2,16 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from api.constants import (MAX_INGREDIENTS_NAME_LENGTH,
-                           MAX_RECIPES_NAME_LENGTH, MAX_TAG_LENGTH,
-                           MAX_TAG_SLUG_LENGTH, MAX_UNIT_LENGTH, MAX_VALUE,
-                           MIN_TIME, MIN_VALUE)
+from api.constants import (
+    MAX_INGREDIENTS_NAME_LENGTH,
+    MAX_RECIPES_NAME_LENGTH,
+    MAX_TAG_LENGTH,
+    MAX_TAG_SLUG_LENGTH,
+    MAX_UNIT_LENGTH,
+    MAX_VALUE,
+    MIN_TIME,
+    MIN_VALUE,
+)
 
 User = get_user_model()
 
@@ -90,8 +96,7 @@ class Recipe(models.Model):
             MinValueValidator(
                 MIN_TIME,
                 message=(
-                    f"Время приготовления не может быть меньше "
-                    f"{(getattr(settings, 'MIN_TIME', 1),)}",
+                    f"Время приготовления не может быть меньше {MIN_TIME}",
                 ),
             ),
         ],
