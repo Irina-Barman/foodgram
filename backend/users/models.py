@@ -1,6 +1,10 @@
-from api.constants import (MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH,
-                           MAX_USERNAME_LENGTH)
+from api.constants import (
+    MAX_EMAIL_LENGTH,
+    MAX_PASSWORD_LENGTH,
+    MAX_USERNAME_LENGTH,
+)
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator
 from django.db import models
 
 HELP_TEXT = "Обязательное поле. Максимальное количество символов: "
@@ -14,6 +18,12 @@ class CustomUser(AbstractUser):
     username = models.CharField(
         max_length=MAX_USERNAME_LENGTH,
         unique=True,
+        validators=[
+            RegexValidator(
+                regex=r"^[\w.@+-]+$",
+                message="Имя пользователя содержит недопустимый символ",
+            )
+        ],
         verbose_name="Логин пользователя",
         help_text=(f"{HELP_TEXT}{MAX_USERNAME_LENGTH}"),
     )
@@ -40,7 +50,11 @@ class CustomUser(AbstractUser):
         help_text=(f"{HELP_TEXT}{MAX_USERNAME_LENGTH}"),
     )
     avatar = models.ImageField(
-        upload_to="users/", blank=True, null=True, verbose_name="Аватар"
+        upload_to="users/",
+        blank=True,
+        null=True,
+        default="",
+        verbose_name="Аватар",
     )
 
     class Meta:
@@ -73,10 +87,12 @@ class Subscription(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=("user", "author"), name="subscriptions_unique"
-            )
+            ),
+            models.CheckConstraint(
+                check=~models.Q(user=models.F("author")),
+                name="Нельзя подписаться на себя",
+            ),
         ]
-        verbose_name = "Подписка"
-        verbose_name_plural = "Подписки"
 
     def __str__(self):
         return f"Подписка {self.user} на {self.author}"
