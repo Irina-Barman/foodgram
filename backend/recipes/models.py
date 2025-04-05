@@ -23,6 +23,10 @@ class Tag(models.Model):
         verbose_name="Имя для ссылки",
     )
 
+    class Meta:
+        verbose_name = "Тег"
+        verbose_name_plural = "Теги"
+
     def __str__(self):
         return self.name
 
@@ -44,9 +48,11 @@ class Ingredient(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["name", "measurement_unit"], name="unique_ingredient"
+                fields=("name", "measurement_unit"), name="unique_ingredient"
             )
         ]
+        verbose_name = "Ингредиент"
+        verbose_name_plural = "Ингредиенты"
 
     def __str__(self):
         return self.name
@@ -100,6 +106,8 @@ class Recipe(models.Model):
 
     class Meta:
         ordering = ("-pub_date",)
+        verbose_name = "Рецепт"
+        verbose_name_plural = "Рецепты"
 
     def __str__(self):
         return self.name
@@ -116,9 +124,11 @@ class RecipeTag(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["recipe", "tag"], name="recipetag_unique"
+                fields=("recipe", "tag"), name="recipetag_unique"
             )
         ]
+        verbose_name = "Тег рецепта"
+        verbose_name_plural = "Теги рецепта"
 
     def __str__(self):
         return f"Рецепт {self.recipe} имеет тег {self.tag}"
@@ -150,9 +160,11 @@ class RecipeIngredient(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["recipe", "ingredient"], name="recipeingredient_unique"
+                fields=("recipe", "ingredient"), name="recipeingredient_unique"
             )
         ]
+        verbose_name = "Ингредиент рецепта"
+        verbose_name_plural = "Ингредиенты рецепта"
 
     def __str__(self):
         return f"Рецепт {self.recipe} содержит {self.ingredient}"
@@ -177,7 +189,7 @@ class Favorites(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["recipe", "user"], name="userfavorites_unique"
+                fields=("recipe", "user"), name="userfavorites_unique"
             )
         ]
 
@@ -204,9 +216,11 @@ class ShoppingCart(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["recipe", "user"], name="usershoppingcart_unique"
+                fields=("recipe", "user"), name="usershoppingcart_unique"
             )
         ]
+        verbose_name = "Список покупок"
+        verbose_name_plural = "Списки покупок"
 
     def __str__(self):
         return f"Рецепт {self.recipe} в корзине {self.user}"
