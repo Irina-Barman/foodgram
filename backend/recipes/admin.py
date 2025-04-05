@@ -7,12 +7,12 @@ from .models import (Favorites, Ingredient, Recipe, RecipeIngredient,
 
 class RecipeTagInline(admin.TabularInline):
     model = RecipeTag
-    extra = 3
+    extra = 1
 
 
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
-    extra = 3
+    extra = 1
 
 
 @admin.register(Recipe)
