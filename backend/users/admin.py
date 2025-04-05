@@ -27,10 +27,12 @@ class UserAdmin(admin.ModelAdmin):
 
     def avatar_display(self, obj):
         """Метод для отображения аватара пользователя."""
-        if obj.avatar:  # Проверяем, есть ли аватар
-            return mark_safe(f'<img src="{obj.avatar.url}" style="width: 50px; height: 50px; border-radius: 50%;" />')
-        return "Нет аватара"  # Возвращаем текст, если аватара нет
-
+        if obj.avatar:
+            return mark_safe(
+                f'<img src="{obj.avatar.url}" '
+                f'style="width: 50px; height: 50px; border-radius: 50%;" />'
+            )
+        return ""
     avatar_display.short_description = 'Аватар'
 
 
