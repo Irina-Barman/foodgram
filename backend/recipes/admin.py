@@ -1,8 +1,15 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from .models import (Favorites, Ingredient, Recipe, RecipeIngredient,
-                     RecipeTag, ShoppingCart, Tag)
+from .models import (
+    Favorites,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    RecipeTag,
+    ShoppingCart,
+    Tag,
+)
 
 
 @admin.register(Recipe)
@@ -32,7 +39,7 @@ class RecipeAdmin(admin.ModelAdmin):
             [
                 f"{ingredient.amount} {ingredient.ingredient.measurement_unit}"
                 f" {ingredient.ingredient.name}"
-                for ingredient in obj.recipeingredient_set.all()
+                for ingredient in obj.recipe_ingredients.all()
             ]
         )
 
@@ -46,7 +53,9 @@ class RecipeAdmin(admin.ModelAdmin):
         return "Нет изображения"
 
     def favorites_count(self, obj):
-        return obj.favorites.count()
+        return (
+            obj.in_favorites.count()
+        )  # Используйте related_name для избранного
 
     favorites_count.short_description = "В Избранном"
 

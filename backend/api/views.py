@@ -165,7 +165,7 @@ class RecipeViewSet(ModelViewSet):
 
         return Response(
             {
-                "id": recipe.id,  # Возвращаем ID нового рецепта
+                "id": recipe.id,
                 "message": "Рецепт успешно создан."
             },
             status=status.HTTP_201_CREATED
