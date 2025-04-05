@@ -151,7 +151,8 @@ class RecipeViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
-        serializer.save(author=self.request.user)
+        recipe = serializer.save(author=self.request.user)
+        return recipe
 
     def create(self, request, *args, **kwargs):
         """Создает новый рецепт, проверяя авторизацию пользователя."""
