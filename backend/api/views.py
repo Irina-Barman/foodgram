@@ -159,7 +159,17 @@ class RecipeViewSet(ModelViewSet):
         if not request.user.is_authenticated:
             raise AuthenticationFailed("Пользователь не авторизован", code=401)
 
-        return super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        recipe = serializer.save(author=self.request.user)
+
+        return Response(
+            {
+                "id": recipe.id,  # Возвращаем ID нового рецепта
+                "message": "Рецепт успешно создан."
+            },
+            status=status.HTTP_201_CREATED
+        )
 
     @action(
         detail=False, methods=["get"], permission_classes=[IsAuthenticated]
