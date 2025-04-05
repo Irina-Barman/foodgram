@@ -1,6 +1,12 @@
 from django.contrib import admin
+from django.contrib.auth.models import Group
+from django.utils.safestring import mark_safe
+from rest_framework.authtoken.models import TokenProxy
 
 from .models import CustomUser, Subscription
+
+admin.site.unregister(Group)
+admin.site.unregister(TokenProxy)
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -12,11 +18,20 @@ class UserAdmin(admin.ModelAdmin):
         "first_name",
         "last_name",
         "id",
+        "avatar_display",
     )
     list_filter = (
         "username",
         "email",
     )
+
+    def avatar_display(self, obj):
+        """Метод для отображения аватара пользователя."""
+        if obj.avatar:  # Проверяем, есть ли аватар
+            return mark_safe(f'<img src="{obj.avatar.url}" style="width: 50px; height: 50px; border-radius: 50%;" />')
+        return "Нет аватара"  # Возвращаем текст, если аватара нет
+
+    avatar_display.short_description = 'Аватар'
 
 
 class SubscriptionAdmin(admin.ModelAdmin):
