@@ -192,6 +192,8 @@ class Favorites(models.Model):
                 fields=("recipe", "user"), name="userfavorites_unique"
             )
         ]
+        verbose_name = "Избранный рецепт"
+        verbose_name_plural = "Избранные рецепты"
 
     def __str__(self):
         return f"Рецепт {self.recipe} в избранном {self.user}"

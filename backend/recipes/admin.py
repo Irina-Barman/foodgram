@@ -5,6 +5,16 @@ from .models import (Favorites, Ingredient, Recipe, RecipeIngredient,
                      RecipeTag, ShoppingCart, Tag)
 
 
+class RecipeTagInline(admin.TabularInline):
+    model = RecipeTag
+    extra = 3
+
+
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredient
+    extra = 3
+
+
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = (
@@ -18,6 +28,8 @@ class RecipeAdmin(admin.ModelAdmin):
     )
     list_filter = ("name", "author__username", "tags__name")
 
+    inlines = [RecipeTagInline, RecipeIngredientInline]  # Добавляем инлайны
+
     @mark_safe
     def cooking_time_display(self, obj):
         return f"{obj.cooking_time} мин"
@@ -30,8 +42,9 @@ class RecipeAdmin(admin.ModelAdmin):
     def ingredients_display(self, obj):
         return ", ".join(
             [
-                f"{ingredient.amount} {ingredient.ingredient.measurement_unit}"
-                f" {ingredient.ingredient.name}"
+                f"{ingredient.amount} "
+                f" {ingredient.ingredient.measurement_unit} "
+                f"{ingredient.ingredient.name}"
                 for ingredient in obj.recipe_ingredients.all()
             ]
         )
@@ -46,9 +59,7 @@ class RecipeAdmin(admin.ModelAdmin):
         return "Нет изображения"
 
     def favorites_count(self, obj):
-        return (
-            obj.in_favorites.count()
-        )  # Используйте related_name для избранного
+        return obj.in_favorites.count()
 
     favorites_count.short_description = "В Избранном"
 
@@ -63,19 +74,6 @@ class TagAdmin(admin.ModelAdmin):
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "measurement_unit")
     search_fields = ("name",)
-
-
-@admin.register(RecipeTag)
-class RecipeTagAdmin(admin.ModelAdmin):
-    list_display = ("recipe", "tag")
-    search_fields = ("tag",)
-
-
-@admin.register(RecipeIngredient)
-class RecipeIngredientAdmin(admin.ModelAdmin):
-    list_display = ("id", "recipe", "ingredient", "amount")
-    search_fields = ("recipe__name", "ingredient__name")
-    raw_id_fields = ("recipe", "ingredient")
 
 
 @admin.register(Favorites)
