@@ -38,7 +38,7 @@ services:
     command: sh -c "echo 'Collecting static files...' && python /app/manage.py collectstatic --noinput && \
       echo 'Applying migrations...' && python /app/manage.py migrate && \
       echo 'Copying collected static files...' && cp -r /app/collected_static/. /backend_static/static/ && \
-      echo 'Starting Gunicorn server...' && gunicorn --bind 0.0.0.0:8080 foodgram_project.wsgi:application"
+      echo 'Starting Gunicorn server...' && gunicorn --bind 0.0.0.0:8000 foodgram_project.wsgi:application"
 
   frontend:
     container_name: foodgram-front
@@ -56,6 +56,6 @@ services:
       - foodgram_media:/media
       - ../docs/:/usr/share/nginx/html/api/docs/
     ports:
-      - "8080:80"
+      - "8000:80"
     depends_on:
       - backend
