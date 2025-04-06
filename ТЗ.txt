@@ -1,0 +1,35 @@
+вот спецификация: 
+Список пользователей - http://localhost/api/users/, 
+Профиль пользователя - http://localhost/api/users/{id}/, 
+Текущий пользователь - http://localhost/api/users/me/,
+Добавление аватара - http://localhost/api/users/me/avatar/,
+Удаление аватара - http://localhost/api/users/me/avatar/,
+Cписок тегов- http://localhost/api/tags/,
+Получение тега - http://localhost/api/tags/{id}/,
+Список рецептов - http://localhost/api/recipes/,
+Создание рецепта - http://localhost/api/recipes/,
+Получение рецепта - http://localhost/api/recipes/{id}/,
+Обновление рецепта - http://localhost/api/recipes/{id}/,
+Удаление рецепта - http://localhost/api/recipes/{id}/,
+Получить короткую ссылку на рецепт - http://localhost/api/recipes/{id}/get-link/,
+Скачать список покупок - http://localhost/api/recipes/download_shopping_cart/,
+Добавить рецепт в список покупок - http://localhost/api/recipes/{id}/shopping_cart/,
+Удалить рецепт из списка покупок - http://localhost/api/recipes/{id}/shopping_cart/,
+Мои подписки - http://localhost/api/users/subscriptions/,
+Подписаться на пользователя - http://localhost/api/users/{id}/subscribe/,
+Отписаться от пользователя - http://localhost/api/users/{id}/subscribe/,
+Список ингредиентов - http://localhost/api/ingredients/,
+Получение ингредиента - http://localhost/api/ingredients/{id}/,
+Добавить рецепт в избранное - http://localhost/api/recipes/{id}/favorite/,
+Удалить рецепт из избранного - http://localhost/api/recipes/{id}/favorite/
+
+
+1.	В админке не работает поиск по модели тегов в рецептах.
+2.	Должен быть поиск по модели рецептов, это описано в тз (никак не относиться к п.1)
+3.	В админке должна быть возможность создать полноценный рецепт.
+4.	Какая то проблема с корзиной у админа - ни скачать, ни добавить
+5.	Короткая ссылка выглядит как - http://ffoodgram.ddns.net/recipes/9/. В чем ее короткость, если она ничем не отличается от исходной?
+6.	При указании некорректного кол-ва ингредиентов при создании рецепта не выводиться сообщение с ошибкой.
+7.	После создания рецепта редиректит на 404
+8.	В папке с проектом есть коллекция постмана. Нужно чтобы в результате её выполнения не падал ни один тест.»
+
