@@ -189,7 +189,7 @@ class FavoritesViewSet(ModelViewSet):
 
     serializer_class = FavoritesSerializer
     queryset = Favorites.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsOwnerOrReadOnly]
 
     def create(self, request, *args, **kwargs):
         """Добавляет рецепт в список избранного."""
@@ -328,7 +328,7 @@ class ShoppingCartViewSet(ModelViewSet):
     serializer_class = ShoppingCartSerializer
     pagination_class = LimitPagePagination
     queryset = ShoppingCart.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsOwnerOrReadOnly]
 
     def create(self, request, *args, **kwargs):
         """Добавляет рецепт в список покупок."""
