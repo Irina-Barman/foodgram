@@ -158,7 +158,9 @@ class RecipeViewSet(ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         recipe = self.perform_create(serializer)
-        response_serializer = RecipeListSerializer(recipe)
+        response_serializer = RecipeListSerializer(
+            recipe, context={'request': request}
+        )
 
         return Response(
             response_serializer.data,  # Возвращаем сериализованные данные
