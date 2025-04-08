@@ -3,6 +3,7 @@ from base64 import b64decode
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
+from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from recipes.models import (Favorites, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
@@ -199,52 +200,47 @@ class RecipeWriteSerializer(ModelSerializer):
         )
 
     def validate_ingredients(self, value):
-        if not value:
-            raise ValidationError(
-                {"ingredients": "Нужно выбрать хотя бы один ингредиент!"}
-            )
-
-        ingredients_ids = set()
-        for item in value:
-            ingredient_id = item.get("id")
-            if ingredient_id in ingredients_ids:
+        ingredients = value
+        if not ingredients:
+            raise ValidationError({"ingredients": "Нужно выбрать ингредиент!"})
+        ingredients_list = []
+        for item in ingredients:
+            ingredient = get_object_or_404(Ingredient, name=item["id"])
+            if ingredient in ingredients_list:
                 raise ValidationError(
-                    {"ingredients": "Ингредиенты повторяются!"}
+                    {"ingredients": "Ингридиенты повторяются!"}
                 )
-
-            if int(item.get("amount", 0)) <= 0:
+            if int(item["amount"]) <= 0:
                 raise ValidationError(
                     {"amount": "Количество должно быть больше 0!"}
                 )
-
-            ingredients_ids.add(ingredient_id)
-
+            ingredients_list.append(ingredient)
         return value
 
     def validate_tags(self, value):
+        tags = value
         if not value:
             raise ValidationError({"tags": "Нужно выбрать тег!"})
-
-        if len(value) != len(set(value)):
-            raise ValidationError({"tags": "Теги повторяются!"})
-
+        tags_list = []
+        for tag in tags:
+            if tag in tags_list:
+                raise ValidationError({"tags": "Теги повторяются!"})
+            tags_list.append(tag)
         return value
 
     def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation["ingredients"] = RecipeIngredientSerializer(
+        ingredients = super().to_representation(instance)
+        ingredients["ingredients"] = RecipeIngredientSerializer(
             instance.recipe_ingredients.all(), many=True
         ).data
-        return representation
+        return ingredients
 
     def add_tags_ingredients(self, ingredients, tags, model):
         for ingredient in ingredients:
             RecipeIngredient.objects.update_or_create(
                 recipe=model,
-                ingredient_id=ingredient["id"],  # Используем ingredient_id
-                defaults={
-                    "amount": ingredient["amount"]
-                },  # Указываем amount в defaults
+                ingredient=ingredient["id"],
+                amount=ingredient["amount"],
             )
         model.tags.set(tags)
 
@@ -256,9 +252,16 @@ class RecipeWriteSerializer(ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        ingredients = validated_data.pop("ingredients", [])
-        tags = validated_data.pop("tags", [])
-        instance.ingredients.clear()  # Если вы хотите очистить все ингредиенты
+        if 'ingredients' not in validated_data:
+            raise ValidationError(
+                {"ingredients": "Нужно выбрать ингредиенты!"}
+            )
+        if 'tags' not in validated_data:
+            raise ValidationError({"tags": "Нужно выбрать теги!"})
+
+        ingredients = validated_data.pop("ingredients")
+        tags = validated_data.pop("tags")
+        instance.ingredients.clear()
         self.add_tags_ingredients(ingredients, tags, instance)
         return super().update(instance, validated_data)
 
