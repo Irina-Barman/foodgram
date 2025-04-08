@@ -236,7 +236,6 @@ class TagViewSet(ReadOnlyModelViewSet):
 
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    filterset_class = RecipeFilter
     permission_classes = (IsAdminOrReadOnly,)
 
     def handle_exception(self, exc):
