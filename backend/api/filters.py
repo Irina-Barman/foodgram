@@ -16,7 +16,6 @@ class RecipeFilter(FilterSet):
         field_name="tags__slug",
         to_field_name="slug",
         queryset=Tag.objects.all(),
-        # method="filter_tags"
     )
     is_favorited = BooleanFilter(method="filter_is_favorited")
     is_in_shopping_cart = BooleanFilter(method="filter_is_in_shopping_cart")
@@ -24,10 +23,6 @@ class RecipeFilter(FilterSet):
     class Meta:
         model = Recipe
         fields = ["author", "tags", "is_favorited", "is_in_shopping_cart"]
-
-    # def filter_tags(self, queryset, name, value):
-    #     tag_slugs = self.request.GET.getlist("tags")
-    #     return queryset.filter(tags__slug__in=tag_slugs).distinct()
 
     def filter_is_favorited(self, queryset, name, value):
         """Фильтрация по избранным рецептам."""

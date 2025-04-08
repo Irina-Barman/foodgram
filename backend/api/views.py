@@ -28,13 +28,13 @@ User = get_user_model()
 
 
 class ShortLinkView(APIView):
-    """Вьюсет для генерации короткой ссылки на рецепт."""
+    """Вьюсет для генерации прямой ссылки на рецепт."""
 
     def get(self, request, id):
         recipe = get_object_or_404(Recipe, id=id)
         base_url = request.build_absolute_uri("/")  # Получаем базовый URL
         short_link = (
-            f"{base_url}/{recipe.id}/"  # Создание полной ссылки
+            f"{base_url}/recipes/{recipe.id}/"  # Создание полной ссылки
         )
         return Response({"short-link": short_link}, status=status.HTTP_200_OK)
 
