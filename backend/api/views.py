@@ -156,27 +156,20 @@ class RecipeViewSet(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Создает новый рецепт, проверяя авторизацию пользователя."""
-        if not request.user.is_authenticated:
-            raise AuthenticationFailed("Пользователь не авторизован", code=401)
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        recipe = serializer.save(author=self.request.user)
+        recipe = self.perform_create(serializer)
         response_serializer = RecipeListSerializer(recipe)
 
         return Response(
-            response_serializer.data, status=status.HTTP_201_CREATED
+            response_serializer.data,  # Возвращаем сериализованные данные
+            status=status.HTTP_201_CREATED
         )
 
     @action(
         detail=False, methods=["get"], permission_classes=[IsAuthenticated]
     )
     def download_shopping_cart(self, request):
-        if not request.user.is_authenticated:
-            return JsonResponse(
-                {"detail": "Пользователь не авторизован."},
-                status=401,
-            )
         shopping_cart_items = ShoppingCart.objects.filter(user=request.user)
         return generate_pdf(shopping_cart_items)
 
