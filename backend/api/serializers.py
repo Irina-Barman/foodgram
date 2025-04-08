@@ -5,13 +5,25 @@ from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
-from recipes.models import (Favorites, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag)
+from recipes.models import (
+    Favorites,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShoppingCart,
+    Tag,
+)
 from rest_framework.exceptions import ValidationError
-from rest_framework.serializers import (CharField, Field, ImageField,
-                                        IntegerField, ModelSerializer,
-                                        PrimaryKeyRelatedField, ReadOnlyField,
-                                        SerializerMethodField)
+from rest_framework.serializers import (
+    CharField,
+    Field,
+    ImageField,
+    IntegerField,
+    ModelSerializer,
+    PrimaryKeyRelatedField,
+    ReadOnlyField,
+    SerializerMethodField,
+)
 from rest_framework.validators import UniqueTogetherValidator
 from users.models import Subscription
 
@@ -200,32 +212,33 @@ class RecipeWriteSerializer(ModelSerializer):
         )
 
     def validate_ingredients(self, value):
-        ingredients = value
-        if not ingredients:
+        if not value:
             raise ValidationError({"ingredients": "Нужно выбрать ингредиент!"})
+
         ingredients_list = []
-        for item in ingredients:
-            ingredient = get_object_or_404(Ingredient, name=item["id"])
+        for item in value:
+            ingredient = get_object_or_404(
+                Ingredient, id=item["id"]
+            )  # Изменение на id
             if ingredient in ingredients_list:
                 raise ValidationError(
-                    {"ingredients": "Ингридиенты повторяются!"}
+                    {"ingredients": "Ингредиенты повторяются!"}
                 )
             if int(item["amount"]) <= 0:
                 raise ValidationError(
                     {"amount": "Количество должно быть больше 0!"}
                 )
             ingredients_list.append(ingredient)
+
         return value
 
     def validate_tags(self, value):
-        tags = value
-        if not tags:
+        if not value:
             raise ValidationError({"tags": "Нужно выбрать тег!"})
-        tags_list = []
-        for tag in tags:
-            if tag in tags_list:
-                raise ValidationError({"tags": "Теги повторяются!"})
-            tags_list.append(tag)
+
+        if len(value) != len(set(value)):
+            raise ValidationError({"tags": "Теги повторяются!"})
+
         return value
 
     def to_representation(self, instance):
