@@ -164,7 +164,9 @@ class RecipeViewSet(ModelViewSet):
         recipe = serializer.save(author=self.request.user)
         response_serializer = RecipeListSerializer(recipe)
 
-        return Response(response_serializer, status=status.HTTP_201_CREATED)
+        return Response(
+            response_serializer.data, status=status.HTTP_201_CREATED
+        )
 
     @action(
         detail=False, methods=["get"], permission_classes=[IsAuthenticated]
