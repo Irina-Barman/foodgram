@@ -16,7 +16,7 @@ from users.models import Subscription
 
 from .filters import IngredientSearchFilter, RecipeFilter
 from .pagination import LimitPagePagination
-from .permissions import IsOwnerOrReadOnly
+from .permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
 from .serializers import (AvatarSerializer, CustomUserSerializer,
                           FavoritesSerializer, IngredientSerializer,
                           RecipeListSerializer, RecipeWriteSerializer,
@@ -155,6 +155,7 @@ class RecipeViewSet(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Создает новый рецепт, проверяя авторизацию пользователя."""
+        self.check_permissions(request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         recipe = self.perform_create(serializer)
@@ -219,7 +220,7 @@ class TagViewSet(ReadOnlyModelViewSet):
 
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (IsOwnerOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
@@ -227,7 +228,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (IsOwnerOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = [IngredientSearchFilter]
     search_fields = ["^name"]
 
