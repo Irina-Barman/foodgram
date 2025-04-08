@@ -5,13 +5,25 @@ from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
-from recipes.models import (Favorites, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag)
+from recipes.models import (
+    Favorites,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShoppingCart,
+    Tag,
+)
 from rest_framework.exceptions import ValidationError
-from rest_framework.serializers import (CharField, Field, ImageField,
-                                        IntegerField, ModelSerializer,
-                                        PrimaryKeyRelatedField, ReadOnlyField,
-                                        SerializerMethodField)
+from rest_framework.serializers import (
+    CharField,
+    Field,
+    ImageField,
+    IntegerField,
+    ModelSerializer,
+    PrimaryKeyRelatedField,
+    ReadOnlyField,
+    SerializerMethodField,
+)
 from rest_framework.validators import UniqueTogetherValidator
 from users.models import Subscription
 
@@ -201,22 +213,24 @@ class RecipeWriteSerializer(ModelSerializer):
 
     def validate_ingredients(self, value):
         if not value:
-            raise ValidationError({"ingredients": "Нужно выбрать ингредиент!"})
+            raise ValidationError(
+                {"ingredients": "Нужно выбрать хотя бы один ингредиент!"}
+            )
 
-        ingredients_list = []
+        ingredients_ids = set()
         for item in value:
-            ingredient = get_object_or_404(
-                Ingredient, id=item["id"]
-            )  # Изменение на id
-            if ingredient in ingredients_list:
+            ingredient_id = item.get("id")
+            if ingredient_id in ingredients_ids:
                 raise ValidationError(
                     {"ingredients": "Ингредиенты повторяются!"}
                 )
-            if int(item["amount"]) <= 0:
+
+            if int(item.get("amount", 0)) <= 0:
                 raise ValidationError(
                     {"amount": "Количество должно быть больше 0!"}
                 )
-            ingredients_list.append(ingredient)
+
+            ingredients_ids.add(ingredient_id)
 
         return value
 
@@ -230,18 +244,20 @@ class RecipeWriteSerializer(ModelSerializer):
         return value
 
     def to_representation(self, instance):
-        ingredients = super().to_representation(instance)
-        ingredients["ingredients"] = RecipeIngredientSerializer(
+        representation = super().to_representation(instance)
+        representation["ingredients"] = RecipeIngredientSerializer(
             instance.recipe_ingredients.all(), many=True
         ).data
-        return ingredients
+        return representation
 
     def add_tags_ingredients(self, ingredients, tags, model):
         for ingredient in ingredients:
             RecipeIngredient.objects.update_or_create(
                 recipe=model,
-                ingredient=ingredient["id"],
-                amount=ingredient["amount"],
+                ingredient_id=ingredient["id"],  # Используем ingredient_id
+                defaults={
+                    "amount": ingredient["amount"]
+                },  # Указываем amount в defaults
             )
         model.tags.set(tags)
 
@@ -253,9 +269,9 @@ class RecipeWriteSerializer(ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        ingredients = validated_data.pop("ingredients")
-        tags = validated_data.pop("tags")
-        instance.ingredients.clear()
+        ingredients = validated_data.pop("ingredients", [])
+        tags = validated_data.pop("tags", [])
+        instance.ingredients.clear()  # Если вы хотите очистить все ингредиенты
         self.add_tags_ingredients(ingredients, tags, instance)
         return super().update(instance, validated_data)
 
