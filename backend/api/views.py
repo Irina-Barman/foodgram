@@ -165,9 +165,23 @@ class RecipeViewSet(ModelViewSet):
         )
 
         return Response(
-            response_serializer.data,  # Возвращаем сериализованные данные
+            response_serializer.data,
             status=status.HTTP_201_CREATED
         )
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        response_serializer = RecipeListSerializer(
+            instance, context={'request': request}
+        )
+
+        return Response(response_serializer.data)
 
     @action(
         detail=False, methods=["get"], permission_classes=[IsAuthenticated]
