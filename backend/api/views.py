@@ -201,6 +201,8 @@ class FavoritesViewSet(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Добавляет рецепт в список избранного."""
+        self.permission_classes = [IsAuthenticated]
+        self.check_permissions(request)
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
 
@@ -356,6 +358,8 @@ class ShoppingCartViewSet(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Добавляет рецепт в список покупок."""
+        self.permission_classes = [IsAuthenticated]
+        self.check_permissions(request)
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
 

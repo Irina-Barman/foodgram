@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
-from django_filters.rest_framework import (BooleanFilter, FilterSet,
+from django_filters.rest_framework import (BooleanFilter, CharFilter,
+                                           FilterSet,
                                            ModelChoiceFilter,
                                            ModelMultipleChoiceFilter)
 from recipes.models import Recipe, Tag
@@ -41,5 +42,5 @@ class RecipeFilter(FilterSet):
 
 class IngredientSearchFilter(SearchFilter):
     """Фильтр для поиска ингредиентов по названию."""
-
+    name = CharFilter(field_name="name", lookup_expr="istartswith")
     search_param = "name"
