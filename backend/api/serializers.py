@@ -3,27 +3,14 @@ from base64 import b64decode
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
-from recipes.models import (
-    Favorites,
-    Ingredient,
-    Recipe,
-    RecipeIngredient,
-    ShoppingCart,
-    Tag,
-)
+from recipes.models import (Favorites, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
 from rest_framework.exceptions import ValidationError
-from rest_framework.serializers import (
-    CharField,
-    Field,
-    ImageField,
-    IntegerField,
-    ModelSerializer,
-    PrimaryKeyRelatedField,
-    ReadOnlyField,
-    SerializerMethodField,
-)
+from rest_framework.serializers import (CharField, Field, ImageField,
+                                        IntegerField, ModelSerializer,
+                                        PrimaryKeyRelatedField, ReadOnlyField,
+                                        SerializerMethodField)
 from rest_framework.validators import UniqueTogetherValidator
 from users.models import Subscription
 
