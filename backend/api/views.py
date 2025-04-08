@@ -4,7 +4,8 @@ from djoser.views import UserViewSet
 from recipes.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
 from rest_framework import filters, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import AuthenticationFailed, ValidationError
+from rest_framework.exceptions import (AuthenticationFailed, PermissionDenied,
+                                       ValidationError)
 from rest_framework.generics import (RetrieveUpdateDestroyAPIView,
                                      get_object_or_404)
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
@@ -222,6 +223,14 @@ class TagViewSet(ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
+    def handle_exception(self, exc):
+        if isinstance(exc, PermissionDenied):
+            return Response(
+                {"detail": "У вас недостаточно прав."},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED
+            )
+        return super().handle_exception(exc)
+
 
 class IngredientViewSet(ReadOnlyModelViewSet):
     """Вьюсет для модели ингредиента."""
@@ -231,6 +240,14 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = [IngredientSearchFilter]
     search_fields = ["^name"]
+
+    def handle_exception(self, exc):
+        if isinstance(exc, PermissionDenied):
+            return Response(
+                {"detail": "У вас недостаточно прав."},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED
+            )
+        return super().handle_exception(exc)
 
 
 class SubscriptionViewSet(ModelViewSet):
