@@ -163,13 +163,7 @@ class RecipeViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         recipe = serializer.save(author=self.request.user)
 
-        return Response(
-            {
-                "id": recipe.id,
-                "message": "Рецепт успешно создан."
-            },
-            status=status.HTTP_201_CREATED
-        )
+        return Response(recipe, status=status.HTTP_201_CREATED)
 
     @action(
         detail=False, methods=["get"], permission_classes=[IsAuthenticated]
