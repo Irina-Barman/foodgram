@@ -157,6 +157,7 @@ class RecipeViewSet(ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Создает новый рецепт, проверяя авторизацию пользователя."""
         self.permission_classes = [IsAuthenticated]
+        self.check_permissions(request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         recipe = self.perform_create(serializer)
