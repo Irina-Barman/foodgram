@@ -149,13 +149,6 @@ class RecipeViewSet(ModelViewSet):
             return RecipeListSerializer
         return RecipeWriteSerializer
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({
-            'request': self.request,
-        })
-        return context
-
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
         recipe = serializer.save(author=self.request.user)
@@ -170,10 +163,11 @@ class RecipeViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         recipe = serializer.save(author=self.request.user)
 
-        response_serializer = RecipeListSerializer(recipe)
-
         return Response(
-            response_serializer.data,
+            {
+                "id": recipe.id,
+                "message": "Рецепт успешно создан."
+            },
             status=status.HTTP_201_CREATED
         )
 
