@@ -25,12 +25,12 @@ urlpatterns = [
     path("recipes/<str:id>/get-link/", GetLinkView.as_view(), name="get-link"),
     path(
         "users/<int:id>/subscribe/",
-        SubscriptionViewSet.as_view({"post": "create", "delete": "delete"}),
+        SubscriptionViewSet.as_view(),
         name="subscribe",
     ),
     path(
         "recipes/<int:id>/shopping_cart/",
-        ShoppingCartViewSet.as_view({"post": "create", "delete": "delete"}),
+        ShoppingCartViewSet.as_view(),
         name="shopping_cart",
     ),
     path(

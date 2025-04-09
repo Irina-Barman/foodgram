@@ -33,10 +33,12 @@ class GetLinkView(APIView):
     def get(self, request, id):
         recipe = get_object_or_404(Recipe, id=id)
         base_url = request.build_absolute_uri("/")  # Получаем базовый URL
-        short_link = (
+        direct_link = (
             f"{base_url}/recipes/{recipe.id}/"  # Создание полной ссылки
         )
-        return Response({"short-link": short_link}, status=status.HTTP_200_OK)
+        return Response(
+            {"direct-link": direct_link}, status=status.HTTP_200_OK
+        )
 
 
 class CustomUserViewSet(UserViewSet):
@@ -293,7 +295,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
         return super().handle_exception(exc)
 
 
-class SubscriptionViewSet(ModelViewSet):
+class SubscriptionViewSet(APIView):
     """Вьюсет подписки"""
 
     serializer_class = SubscriptionSerializer
@@ -314,7 +316,7 @@ class SubscriptionViewSet(ModelViewSet):
 
         return None
 
-    def create(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """Создает новую подписку на автора."""
         user_id = self.kwargs["id"]
         author = get_object_or_404(User, id=user_id)
@@ -382,7 +384,7 @@ class ShoppingCartViewSet(ModelViewSet):
     queryset = ShoppingCart.objects.all()
     permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
 
-    def create(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """Добавляет рецепт в список покупок."""
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
