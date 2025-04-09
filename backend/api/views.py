@@ -212,8 +212,6 @@ class RecipeViewSet(ModelViewSet):
                         'amount': ingredient_amount,
                         'unit': ingredient_unit
                     }
-
-        # Преобразуем словарь в список для передачи в generate_pdf
         ingredient_list = [
             {
                 'name': name,
@@ -231,12 +229,10 @@ class FavoritesViewSet(ModelViewSet):
 
     serializer_class = FavoritesSerializer
     queryset = Favorites.objects.all()
-    permission_classes = [IsOwnerOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         """Добавляет рецепт в список избранного."""
-        self.permission_classes = [IsAuthenticated]
-        self.check_permissions(request)
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
 
@@ -388,12 +384,10 @@ class ShoppingCartViewSet(ModelViewSet):
     serializer_class = ShoppingCartSerializer
     pagination_class = LimitPagePagination
     queryset = ShoppingCart.objects.all()
-    permission_classes = [IsOwnerOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         """Добавляет рецепт в список покупок."""
-        self.permission_classes = [IsAuthenticated]
-        self.check_permissions(request)
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
 
