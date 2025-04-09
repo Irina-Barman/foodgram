@@ -20,16 +20,11 @@ class UserAdmin(BaseUserAdmin):
         "last_name",
         "id",
         "avatar_display",
+        "password",
     )
     list_filter = (
         "username",
         "email",
-    )
-    # Добавляем возможность менять пароль
-    fieldsets = BaseUserAdmin.fieldsets + ((None, {"fields": ("password",)}),)
-
-    add_fieldsets = BaseUserAdmin.add_fieldsets + (
-        (None, {"fields": ("password1", "password2")}),
     )
 
     def avatar_display(self, obj):
