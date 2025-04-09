@@ -220,16 +220,14 @@ class RecipeViewSet(ModelViewSet):
         return generate_pdf(ingredient_list)
 
 
-class FavoritesViewSet(ModelViewSet):
+class FavoritesViewSet(APIView):
     """Вьюсет списка избранных рецептов."""
 
     serializer_class = FavoritesSerializer
     queryset = Favorites.objects.all()
     permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
-    http_method_names = ["post", "delete"]
 
-    @action(detail=True, methods=["post"])
-    def add_to_favorites(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """Добавляет рецепт в список избранного."""
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
@@ -244,8 +242,7 @@ class FavoritesViewSet(ModelViewSet):
         serializer = FavoritesSerializer(recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=["delete"])
-    def remove_from_favorites(self, request, *args, **kwargs):
+    def delete(self, request, *args, **kwargs):
         """Удаляет рецепт из списка избранного."""
         recipe_id = self.kwargs["id"]
         user_id = request.user.id
