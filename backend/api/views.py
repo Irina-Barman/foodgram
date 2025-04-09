@@ -232,7 +232,8 @@ class FavoritesViewSet(ModelViewSet):
     permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
     http_method_names = ['post', 'delete']
 
-    def create(self, request, *args, **kwargs):
+    @action(detail=True, methods=['post'])
+    def add_to_favorites(self, request, *args, **kwargs):
         """Добавляет рецепт в список избранного."""
         recipe_id = self.kwargs["id"]
         recipe = get_object_or_404(Recipe, id=recipe_id)
@@ -247,7 +248,8 @@ class FavoritesViewSet(ModelViewSet):
         serializer = FavoritesSerializer(recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def delete(self, request, *args, **kwargs):
+    @action(detail=True, methods=['post'])
+    def remove_from_favorites(self, request, *args, **kwargs):
         """Удаляет рецепт из списка избранного."""
         recipe_id = self.kwargs["id"]
         user_id = request.user.id
