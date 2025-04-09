@@ -265,6 +265,18 @@ class FavoritesViewSet(ModelViewSet):
         favorite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    def list(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Метод не разрешен."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
+    def retrieve(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Метод не разрешен."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
 
 class TagViewSet(ReadOnlyModelViewSet):
     """Вьюсет для модели тега."""
