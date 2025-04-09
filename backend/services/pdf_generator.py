@@ -5,25 +5,9 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 
-def generate_pdf(shopping_cart_items):
-    ingredients_dict = {}
-
-    if not shopping_cart_items:
+def generate_pdf(ingredients):
+    if not ingredients:
         return HttpResponse("Ваша корзина пуста.", content_type="text/plain")
-
-    for item in shopping_cart_items:
-        recipe = item.recipe
-        for recipe_ingredients in recipe.recipe_ingredients.all():
-            ingredient = recipe_ingredients.ingredient
-            amount = recipe_ingredients.amount
-
-            if ingredient.name in ingredients_dict:
-                ingredients_dict[ingredient.name]["amount"] += amount
-            else:
-                ingredients_dict[ingredient.name] = {
-                    "amount": amount,
-                    "unit": ingredient.measurement_unit,
-                }
 
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = (
@@ -41,9 +25,11 @@ def generate_pdf(shopping_cart_items):
 
     y_position = height - 80
 
-    for ingredient_name, details in ingredients_dict.items():
-        total_amount = details["amount"]
-        unit = details["unit"]
+    for ingredient in ingredients:
+        ingredient_name = ingredient.name
+        total_amount = ingredient.amount
+        unit = ingredient.measurement_unit
+
         p.drawString(
             100, y_position, f"{ingredient_name}: {total_amount} {unit}"
         )

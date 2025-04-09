@@ -138,7 +138,11 @@ class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
 class RecipeViewSet(ModelViewSet):
     """Вьюсет для модели рецепта."""
 
-    queryset = Recipe.objects.all()
+    queryset = (
+        Recipe.objects.all()
+        .select_related('author')
+        .prefetch_related('recipe_ingredients', 'recipe_tags')
+    )
     pagination_class = LimitPagePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = RecipeFilter
@@ -151,26 +155,26 @@ class RecipeViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
-        recipe = serializer.save(author=self.request.user)
-        return recipe
+        return serializer.save(author=self.request.user)
 
     def create(self, request, *args, **kwargs):
         """Создает новый рецепт, проверяя авторизацию пользователя."""
         self.permission_classes = [IsAuthenticated]
         self.check_permissions(request)
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         recipe = self.perform_create(serializer)
-        response_serializer = RecipeListSerializer(
-            recipe, context={'request': request}
-        )
 
-        return Response(
-            response_serializer.data,
-            status=status.HTTP_201_CREATED
+        response_serializer = (
+            RecipeListSerializer(recipe, context={'request': request})
+        )
+        return (
+            Response(response_serializer.data, status=status.HTTP_201_CREATED)
         )
 
     def update(self, request, *args, **kwargs):
+        """Обновляет существующий рецепт."""
         instance = self.get_object()
         serializer = self.get_serializer(
             instance, data=request.data, partial=True
@@ -178,18 +182,31 @@ class RecipeViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
-        response_serializer = RecipeListSerializer(
-            instance, context={'request': request}
+        response_serializer = (
+            RecipeListSerializer(instance, context={'request': request})
         )
-
         return Response(response_serializer.data)
 
     @action(
         detail=False, methods=["get"], permission_classes=[IsAuthenticated]
     )
     def download_shopping_cart(self, request):
-        shopping_cart_items = ShoppingCart.objects.filter(user=request.user)
-        return generate_pdf(shopping_cart_items)
+        """Генерирует PDF для корзины покупок."""
+        shopping_cart_items = (
+            ShoppingCart.objects.filter(user=request.user)
+            .select_related('recipe')
+            .prefetch_related('recipe__recipe_ingredients__ingredient')
+        )
+        ingredients = {}
+        for cart_item in shopping_cart_items:
+            for recipe_ingredient in cart_item.recipe.recipe_ingredients.all():
+                ingredient_name = recipe_ingredient.ingredient.name
+                ingredient_amount = recipe_ingredient.amount
+                if ingredient_name in ingredients:
+                    ingredients[ingredient_name] += ingredient_amount
+                else:
+                    ingredients[ingredient_name] = ingredient_amount
+        return generate_pdf(ingredients)
 
 
 class FavoritesViewSet(ModelViewSet):
