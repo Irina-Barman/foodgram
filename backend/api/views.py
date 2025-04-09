@@ -197,16 +197,33 @@ class RecipeViewSet(ModelViewSet):
             .select_related('recipe')
             .prefetch_related('recipe__recipe_ingredients__ingredient')
         )
+        
         ingredients = {}
         for cart_item in shopping_cart_items:
             for recipe_ingredient in cart_item.recipe.recipe_ingredients.all():
                 ingredient_name = recipe_ingredient.ingredient.name
                 ingredient_amount = recipe_ingredient.amount
+                ingredient_unit = recipe_ingredient.ingredient.measurement_unit
+
                 if ingredient_name in ingredients:
-                    ingredients[ingredient_name] += ingredient_amount
+                    ingredients[ingredient_name]['amount'] += ingredient_amount
                 else:
-                    ingredients[ingredient_name] = ingredient_amount
-        return generate_pdf(ingredients)
+                    ingredients[ingredient_name] = {
+                        'amount': ingredient_amount,
+                        'unit': ingredient_unit
+                    }
+
+        # Преобразуем словарь в список для передачи в generate_pdf
+        ingredient_list = [
+            {
+                'name': name,
+                'amount': data['amount'],
+                'unit': data['unit']
+            }
+            for name, data in ingredients.items()
+        ]
+
+        return generate_pdf(ingredient_list)
 
 
 class FavoritesViewSet(ModelViewSet):
