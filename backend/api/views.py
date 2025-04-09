@@ -262,6 +262,13 @@ class FavoritesViewSet(ModelViewSet):
         favorite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    def get(self, request, *args, **kwargs):
+        # Возвращаем ошибку 405 Method Not Allowed для GET-запросов
+        return Response(
+            {"error": "Method not allowed."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
 
 class TagViewSet(ReadOnlyModelViewSet):
     """Вьюсет для модели тега."""
