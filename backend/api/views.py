@@ -27,7 +27,7 @@ from .serializers import (AvatarSerializer, CustomUserSerializer,
 User = get_user_model()
 
 
-class ShortLinkView(APIView):
+class GetLinkView(APIView):
     """Вьюсет для генерации прямой ссылки на рецепт."""
 
     def get(self, request, id):
