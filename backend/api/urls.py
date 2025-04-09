@@ -12,7 +12,7 @@ router_v1.register("users", CustomUserViewSet)
 router_v1.register("ingredients", IngredientViewSet)
 router_v1.register("recipes", RecipeViewSet)
 router_v1.register(
-    r'recipes/(?P<id>\d+)/favorite', FavoritesViewSet, basename='favorites'
+    r"recipes/(?P<id>\d+)/favorite", FavoritesViewSet, basename="favorites"
 )
 router_v1.register("shopping_cart", ShoppingCartViewSet)
 
