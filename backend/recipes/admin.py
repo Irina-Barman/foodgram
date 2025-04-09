@@ -26,9 +26,11 @@ class RecipeAdmin(admin.ModelAdmin):
         "image_display",
         "favorites_count",
     )
-    list_filter = ("name", "author__username", "tags__name")
+    list_filter = ("name", "author__username", "recipe_tags__tag__name")
     search_fields = (
-        "name", "tags__name", "recipe_ingredients__ingredient__name"
+        "name",
+        "recipe_tags__tag__name",
+        "recipe_ingredients__ingredient__name"
     )
 
     inlines = [RecipeTagInline, RecipeIngredientInline]  # Добавляем инлайны
