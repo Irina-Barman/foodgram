@@ -197,7 +197,7 @@ class RecipeViewSet(ModelViewSet):
             .select_related('recipe')
             .prefetch_related('recipe__recipe_ingredients__ingredient')
         )
-        
+
         ingredients = {}
         for cart_item in shopping_cart_items:
             for recipe_ingredient in cart_item.recipe.recipe_ingredients.all():
