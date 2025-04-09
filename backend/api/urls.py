@@ -11,17 +11,18 @@ router_v1.register("tags", TagViewSet)
 router_v1.register("users", CustomUserViewSet)
 router_v1.register("ingredients", IngredientViewSet)
 router_v1.register("recipes", RecipeViewSet)
+router_v1.register("recipes/<int:id>/favorite", FavoritesViewSet)
 router_v1.register("shopping_cart", ShoppingCartViewSet)
 
 urlpatterns = [
     path("", include(router_v1.urls)),
     path("", include("djoser.urls")),
     re_path(r"^auth/", include("djoser.urls.authtoken")),
-    path(
-        "recipes/<int:id>/favorite/",
-        FavoritesViewSet.as_view(),
-        name="favorite",
-    ),
+    # path(
+    #     "recipes/<int:id>/favorite/",
+    #     FavoritesViewSet.as_view({"post": "create", "delete": "delete"}),
+    #     name="favorite",
+    # ),
     path(
         "recipes/<str:id>/get-link/", ShortLinkView.as_view(), name="get-link"
     ),

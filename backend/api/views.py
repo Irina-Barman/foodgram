@@ -140,8 +140,8 @@ class RecipeViewSet(ModelViewSet):
 
     queryset = (
         Recipe.objects.all()
-        .select_related('author')
-        .prefetch_related('recipe_ingredients', 'recipe_tags')
+        .select_related("author")
+        .prefetch_related("recipe_ingredients", "recipe_tags")
     )
     pagination_class = LimitPagePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -166,11 +166,11 @@ class RecipeViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         recipe = self.perform_create(serializer)
 
-        response_serializer = (
-            RecipeListSerializer(recipe, context={'request': request})
+        response_serializer = RecipeListSerializer(
+            recipe, context={"request": request}
         )
-        return (
-            Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(
+            response_serializer.data, status=status.HTTP_201_CREATED
         )
 
     def update(self, request, *args, **kwargs):
@@ -182,8 +182,8 @@ class RecipeViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
-        response_serializer = (
-            RecipeListSerializer(instance, context={'request': request})
+        response_serializer = RecipeListSerializer(
+            instance, context={"request": request}
         )
         return Response(response_serializer.data)
 
@@ -194,8 +194,8 @@ class RecipeViewSet(ModelViewSet):
         """Генерирует PDF для корзины покупок."""
         shopping_cart_items = (
             ShoppingCart.objects.filter(user=request.user)
-            .select_related('recipe')
-            .prefetch_related('recipe__recipe_ingredients__ingredient')
+            .select_related("recipe")
+            .prefetch_related("recipe__recipe_ingredients__ingredient")
         )
 
         ingredients = {}
@@ -206,18 +206,14 @@ class RecipeViewSet(ModelViewSet):
                 ingredient_unit = recipe_ingredient.ingredient.measurement_unit
 
                 if ingredient_name in ingredients:
-                    ingredients[ingredient_name]['amount'] += ingredient_amount
+                    ingredients[ingredient_name]["amount"] += ingredient_amount
                 else:
                     ingredients[ingredient_name] = {
-                        'amount': ingredient_amount,
-                        'unit': ingredient_unit
+                        "amount": ingredient_amount,
+                        "unit": ingredient_unit,
                     }
         ingredient_list = [
-            {
-                'name': name,
-                'amount': data['amount'],
-                'unit': data['unit']
-            }
+            {"name": name, "amount": data["amount"], "unit": data["unit"]}
             for name, data in ingredients.items()
         ]
 
@@ -230,9 +226,9 @@ class FavoritesViewSet(ModelViewSet):
     serializer_class = FavoritesSerializer
     queryset = Favorites.objects.all()
     permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
-    http_method_names = ['post', 'delete']
+    http_method_names = ["post", "delete"]
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def add_to_favorites(self, request, *args, **kwargs):
         """Добавляет рецепт в список избранного."""
         recipe_id = self.kwargs["id"]
@@ -248,7 +244,7 @@ class FavoritesViewSet(ModelViewSet):
         serializer = FavoritesSerializer(recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["delete"])
     def remove_from_favorites(self, request, *args, **kwargs):
         """Удаляет рецепт из списка избранного."""
         recipe_id = self.kwargs["id"]
@@ -265,13 +261,6 @@ class FavoritesViewSet(ModelViewSet):
         favorite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['get'])
-    def list(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Метод не разрешен."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
-
 
 class TagViewSet(ReadOnlyModelViewSet):
     """Вьюсет для модели тега."""
@@ -284,7 +273,7 @@ class TagViewSet(ReadOnlyModelViewSet):
         if isinstance(exc, PermissionDenied):
             return Response(
                 {"detail": "У вас недостаточно прав."},
-                status=status.HTTP_405_METHOD_NOT_ALLOWED
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
         return super().handle_exception(exc)
 
@@ -302,7 +291,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
         if isinstance(exc, PermissionDenied):
             return Response(
                 {"detail": "У вас недостаточно прав."},
-                status=status.HTTP_405_METHOD_NOT_ALLOWED
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
         return super().handle_exception(exc)
 
