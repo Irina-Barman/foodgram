@@ -37,7 +37,7 @@ class GetLinkView(APIView):
             f"{base_url}/recipes/{recipe.id}/"  # Создание полной ссылки
         )
         return Response(
-            {"direct-link": direct_link}, status=status.HTTP_200_OK
+            {"short-link": direct_link}, status=status.HTTP_200_OK
         )
 
 
