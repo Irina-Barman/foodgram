@@ -18,7 +18,7 @@ urlpatterns = [
     path("", include("djoser.urls")),
     re_path(r"^auth/", include("djoser.urls.authtoken")),
     path(
-        "recipes/<int:pk>/favorite/",
+        "recipes/<int:id>/favorite/",
         FavoritesViewSet.as_view(),
         name="favorite",
     ),
