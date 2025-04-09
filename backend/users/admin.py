@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
 from django.utils.safestring import mark_safe
 from rest_framework.authtoken.models import TokenProxy
@@ -9,7 +10,7 @@ admin.site.unregister(Group)
 admin.site.unregister(TokenProxy)
 
 
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(BaseUserAdmin):
     """Класс для представления модели пользователя в админ-зоне."""
 
     list_display = (
@@ -24,6 +25,12 @@ class UserAdmin(admin.ModelAdmin):
         "username",
         "email",
     )
+    # Добавляем возможность менять пароль
+    fieldsets = BaseUserAdmin.fieldsets + ((None, {"fields": ("password",)}),)
+
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (
+        (None, {"fields": ("password1", "password2")}),
+    )
 
     def avatar_display(self, obj):
         """Метод для отображения аватара пользователя."""
@@ -33,7 +40,8 @@ class UserAdmin(admin.ModelAdmin):
                 f'style="width: 50px; height: 50px; border-radius: 50%;" />'
             )
         return ""
-    avatar_display.short_description = 'Аватар'
+
+    avatar_display.short_description = "Аватар"
 
 
 class SubscriptionAdmin(admin.ModelAdmin):
