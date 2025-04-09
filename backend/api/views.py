@@ -376,7 +376,7 @@ class SubscriptionViewSet(APIView):
         )
 
 
-class ShoppingCartViewSet(ModelViewSet):
+class ShoppingCartViewSet(APIView):
     """Вьюсет списка покупок."""
 
     serializer_class = ShoppingCartSerializer
