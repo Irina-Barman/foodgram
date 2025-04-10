@@ -19,31 +19,25 @@ router_v1.register("tags", TagViewSet)
 router_v1.register("users", CustomUserViewSet)
 router_v1.register("ingredients", IngredientViewSet)
 router_v1.register("recipes", RecipeViewSet)
-router_v1.register(
-    r"recipes/(?P<id>\d+)/favorite", FavoritesViewSet, basename="favorites"
-)
-router_v1.register("shopping_cart", ShoppingCartViewSet)
 
 urlpatterns = [
     path("", include(router_v1.urls)),
     path("", include("djoser.urls")),
     re_path(r"^auth/", include("djoser.urls.authtoken")),
-    # path(
-    #     "recipes/<int:id>/favorite/",
-    #     FavoritesViewSet.as_view({"post": "create", "delete": "delete"}),
-    #     name="favorite",
-    # ),
     path(
-        "recipes/<str:id>/get-link/", GetLinkView.as_view(), name="get-link"
+        "recipes/<int:id>/favorite/",
+        FavoritesViewSet.as_view(),
+        name="favorite",
     ),
+    path("recipes/<str:id>/get-link/", GetLinkView.as_view(), name="get-link"),
     path(
         "users/<int:id>/subscribe/",
-        SubscriptionViewSet.as_view({"post": "create", "delete": "delete"}),
+        SubscriptionViewSet.as_view(),
         name="subscribe",
     ),
     path(
         "recipes/<int:id>/shopping_cart/",
-        ShoppingCartViewSet.as_view({"post": "create", "delete": "delete"}),
+        ShoppingCartViewSet.as_view(),
         name="shopping_cart",
     ),
     path(
