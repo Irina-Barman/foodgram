@@ -47,3 +47,4 @@ class RecipeFilter(FilterSet):
 class IngredientSearchFilter(SearchFilter):
     """Фильтр для поиска ингредиентов по названию."""
     name = CharFilter(field_name="name", lookup_expr="istartswith")
+    search_param = "name"
