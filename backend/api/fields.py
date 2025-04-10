@@ -3,6 +3,7 @@ from base64 import b64decode
 from django.core.files.base import ContentFile
 from rest_framework.serializers import Field, ImageField
 
+from .serializers import RecipeSerializer
 from recipes.models import Recipe
 
 
@@ -25,14 +26,5 @@ class RecipeSubscriptionUserField(Field):
 
     def to_representation(self, recipes_list):
         """Преобразование списка в удобный для представления формат."""
-        recipes_data = []
-        for recipes in recipes_list:
-            recipes_data.append(
-                {
-                    "id": recipes.id,
-                    "name": recipes.name,
-                    "image": recipes.image.url if recipes.image else None,
-                    "cooking_time": recipes.cooking_time,
-                }
-            )
-        return recipes_data
+        serializer = RecipeSerializer(recipes_list, many=True)
+        return serializer.data

@@ -110,6 +110,21 @@ class IngredientSerializer(ModelSerializer):
         )
 
 
+class RecipeSerializer(ModelSerializer):
+    """Сериализатор для модели Recipe."""
+
+    class Meta:
+        model = Recipe
+        fields = ("id", "name", "image", "cooking_time")
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["image"] = (
+            instance.image.url if instance.image else None
+        )
+        return representation
+
+
 class RecipeIngredientSerializer(ModelSerializer):
     """Сериализатор для связаной модели Recipe и Ingredient."""
 
@@ -178,6 +193,13 @@ class AddIngredientSerializer(ModelSerializer):
         model = RecipeIngredient
         fields = ("id", "amount")
 
+    def validate_amount(self, value):
+        if value <= 0:
+            raise ValidationError(
+                {"amount": "Количество должно быть больше 0!"}
+            )
+        return value
+
 
 class RecipeWriteSerializer(ModelSerializer):
     """Сериализатор для модели Recipe - запись / обновление / удаление."""
@@ -212,19 +234,21 @@ class RecipeWriteSerializer(ModelSerializer):
         return value
 
     def to_representation(self, instance):
-        ingredients = super().to_representation(instance)
-        ingredients["ingredients"] = RecipeIngredientSerializer(
-            instance.recipe_ingredients.all(), many=True
-        ).data
-        return ingredients
+        # Используем сериализатор для получения рецепта
+        return RecipeListSerializer(instance).data
 
     def add_tags_ingredients(self, ingredients, tags, model):
-        for ingredient in ingredients:
-            RecipeIngredient.objects.update_or_create(
+        recipe_ingredients = [
+            RecipeIngredient(
                 recipe=model,
                 ingredient=ingredient["id"],
-                defaults={"amount": ingredient["amount"]},
+                amount=ingredient["amount"],
             )
+            for ingredient in ingredients
+        ]
+
+        # Используем bulk_create для создания всех объектов за один запрос
+        RecipeIngredient.objects.bulk_create(recipe_ingredients)
         model.tags.set(tags)
 
     def create(self, validated_data):
@@ -237,9 +261,11 @@ class RecipeWriteSerializer(ModelSerializer):
     def update(self, instance, validated_data):
         ingredients = validated_data.pop("ingredients", None)
         tags = validated_data.pop("tags", None)
-        
+
         if ingredients is None:
-            raise ValidationError({"ingredients": "Нужно выбрать ингредиенты!"})
+            raise ValidationError(
+                {"ingredients": "Нужно выбрать ингредиенты!"}
+            )
         if tags is None:
             raise ValidationError({"tags": "Нужно выбрать теги!"})
 
@@ -310,25 +336,16 @@ class SubscriptionSerializer(ModelSerializer):
         limit = self.context["request"].query_params.get("recipes_limit", None)
         if limit:
             recipes = recipes[: int(limit)]
-        return [
-            {
-                "id": recipe.id,
-                "name": recipe.name,
-                "image": recipe.image.url,
-                "cooking_time": recipe.cooking_time,
-            }
-            for recipe in recipes
-        ]
+        serializer = RecipeSerializer(recipes, many=True)
+        return serializer.data
 
     def get_recipes_count(self, obj):
         """Получение количества рецептов автора."""
-        return Recipe.objects.filter(author=obj.author).count()
+        return obj.author.recipes.count()
 
     def get_avatar(self, obj):
         """Получение URL аватара автора."""
-        if obj.author.avatar:
-            return obj.author.avatar.url
-        return None
+        return obj.author.avatar.url if obj.author.avatar else None
 
     def get_is_subscribed(self, obj):
         """Проверка, подписан ли пользователь на автора."""
