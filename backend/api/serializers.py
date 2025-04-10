@@ -5,6 +5,7 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import (
     CharField,
+    Field,
     IntegerField,
     ModelSerializer,
     PrimaryKeyRelatedField,
@@ -13,7 +14,7 @@ from rest_framework.serializers import (
 )
 from rest_framework.validators import UniqueTogetherValidator
 
-from .fields import Base64ImageField, RecipeSubscriptionUserField
+from .fields import Base64ImageField
 from recipes.models import (
     Favorites,
     Ingredient,
@@ -178,6 +179,19 @@ class RecipeListSerializer(ModelSerializer):
         if not user.is_anonymous:
             return ShoppingCart.objects.filter(recipe=obj, user=user).exists()
         return False
+
+
+class RecipeSubscriptionUserField(Field):
+    """Сериализатор для вывода рецептов в подписках."""
+
+    def get_attribute(self, instance):
+        """Получение списка рецептов, принадлежащих автору."""
+        return Recipe.objects.filter(author=instance.author)
+
+    def to_representation(self, recipes_list):
+        """Преобразование списка в удобный для представления формат."""
+        serializer = RecipeSerializer(recipes_list, many=True)
+        return serializer.data
 
 
 class AddIngredientSerializer(ModelSerializer):
