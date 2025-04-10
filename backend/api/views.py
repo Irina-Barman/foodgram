@@ -266,15 +266,13 @@ class FavoritesViewSet(ModelViewSet):
         recipe_id = self.kwargs["id"]
         user_id = request.user.id
         recipe = get_object_or_404(Recipe, id=recipe_id)
-        favorite = Favorites.objects.filter(
+
+        deleted, _ = Favorites.objects.filter(
             user__id=user_id, recipe=recipe
-        ).first()
-        if not favorite:
-            return Response(
-                {"detail": "Избранный рецепт не найден."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        favorite.delete()
+        ).delete()
+        if not deleted:
+            raise ValidationError("Избранный рецепт не найден.")
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -374,20 +372,19 @@ class SubscriptionViewSet(ModelViewSet):
         """Удаляет подписку на автора."""
         author_id = self.kwargs["id"]
         author = get_object_or_404(User, id=author_id)
-        validation_response = self.validate_subscription(request.user, author)
 
+        # Проверка подписки
+        validation_response = self.validate_subscription(request.user, author)
         if validation_response:
             return Response(*validation_response)
-        subscription = Subscription.objects.filter(
-            user=request.user, author=author
-        ).first()
 
-        if not subscription:
-            return Response(
-                {"detail": "Подписка не найдена."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        subscription.delete()
+        deleted, _ = Subscription.objects.filter(
+            user=request.user, author=author
+        ).delete()
+
+        if not deleted:
+            raise ValidationError("Подписка не найдена.")
+
         return Response(
             {"detail": "Подписка удалена."}, status=status.HTTP_204_NO_CONTENT
         )
