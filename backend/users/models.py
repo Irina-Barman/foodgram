@@ -1,8 +1,12 @@
-from api.constants import (MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH,
-                           MAX_USERNAME_LENGTH)
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
+
+from api.constants import (
+    MAX_EMAIL_LENGTH,
+    MAX_PASSWORD_LENGTH,
+    MAX_USERNAME_LENGTH,
+)
 
 HELP_TEXT = "Обязательное поле. Максимальное количество символов: "
 
@@ -10,7 +14,7 @@ HELP_TEXT = "Обязательное поле. Максимальное кол�
 class CustomUser(AbstractUser):
     """Модель пользователя."""
 
-    REQUIRED_FIELDS = ["id", "email", "first_name", "last_name"]
+    REQUIRED_FIELDS = ("id", "email", "first_name", "last_name")
 
     username = models.CharField(
         max_length=MAX_USERNAME_LENGTH,

@@ -1,9 +1,14 @@
 from django.contrib.auth import get_user_model
-from django_filters.rest_framework import (BooleanFilter, CharFilter,
-                                           FilterSet, ModelChoiceFilter,
-                                           ModelMultipleChoiceFilter)
-from recipes.models import Recipe, Tag
+from django_filters.rest_framework import (
+    BooleanFilter,
+    CharFilter,
+    FilterSet,
+    ModelChoiceFilter,
+    ModelMultipleChoiceFilter,
+)
 from rest_framework.filters import SearchFilter
+
+from recipes.models import Recipe, Tag
 
 User = get_user_model()
 
@@ -22,7 +27,7 @@ class RecipeFilter(FilterSet):
 
     class Meta:
         model = Recipe
-        fields = ["author", "tags", "is_favorited", "is_in_shopping_cart"]
+        fields = ("author", "tags", "is_favorited", "is_in_shopping_cart")
 
     def filter_is_favorited(self, queryset, name, value):
         """Фильтрация по избранным рецептам."""
@@ -42,4 +47,3 @@ class RecipeFilter(FilterSet):
 class IngredientSearchFilter(SearchFilter):
     """Фильтр для поиска ингредиентов по названию."""
     name = CharFilter(field_name="name", lookup_expr="istartswith")
-    search_param = "name"
