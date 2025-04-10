@@ -200,32 +200,15 @@ class RecipeWriteSerializer(ModelSerializer):
         )
 
     def validate_ingredients(self, value):
-        ingredients = value
-        if not ingredients:
+        if not value:
             raise ValidationError({"ingredients": "Нужно выбрать ингредиент!"})
-        ingredients_list = []
-        for item in ingredients:
-            ingredient = get_object_or_404(Ingredient, name=item["id"])
-            if ingredient in ingredients_list:
-                raise ValidationError(
-                    {"ingredients": "Ингридиенты повторяются!"}
-                )
-            if int(item["amount"]) <= 0:
-                raise ValidationError(
-                    {"amount": "Количество должно быть больше 0!"}
-                )
-            ingredients_list.append(ingredient)
         return value
 
     def validate_tags(self, value):
-        tags = value
         if not value:
             raise ValidationError({"tags": "Нужно выбрать тег!"})
-        tags_list = []
-        for tag in tags:
-            if tag in tags_list:
-                raise ValidationError({"tags": "Теги повторяются!"})
-            tags_list.append(tag)
+        if len(value) != len(set(value)):
+            raise ValidationError({"tags": "Теги повторяются!"})
         return value
 
     def to_representation(self, instance):
@@ -240,7 +223,7 @@ class RecipeWriteSerializer(ModelSerializer):
             RecipeIngredient.objects.update_or_create(
                 recipe=model,
                 ingredient=ingredient["id"],
-                amount=ingredient["amount"],
+                defaults={"amount": ingredient["amount"]},
             )
         model.tags.set(tags)
 
@@ -252,15 +235,14 @@ class RecipeWriteSerializer(ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        if 'ingredients' not in validated_data:
-            raise ValidationError(
-                {"ingredients": "Нужно выбрать ингредиенты!"}
-            )
-        if 'tags' not in validated_data:
+        ingredients = validated_data.pop("ingredients", None)
+        tags = validated_data.pop("tags", None)
+        
+        if ingredients is None:
+            raise ValidationError({"ingredients": "Нужно выбрать ингредиенты!"})
+        if tags is None:
             raise ValidationError({"tags": "Нужно выбрать теги!"})
 
-        ingredients = validated_data.pop("ingredients")
-        tags = validated_data.pop("tags")
         instance.ingredients.clear()
         self.add_tags_ingredients(ingredients, tags, instance)
         return super().update(instance, validated_data)
