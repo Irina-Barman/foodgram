@@ -3,7 +3,6 @@ from django_filters.rest_framework import (
     BooleanFilter,
     CharFilter,
     FilterSet,
-    ModelChoiceFilter,
     ModelMultipleChoiceFilter,
 )
 from rest_framework.filters import SearchFilter
