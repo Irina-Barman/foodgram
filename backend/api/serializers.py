@@ -368,6 +368,7 @@ class BaseRecipeSerializer(ModelSerializer):
 
     class Meta:
         abstract = True
+        fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class FavoritesSerializer(BaseRecipeSerializer):
