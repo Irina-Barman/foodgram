@@ -16,7 +16,6 @@ User = get_user_model()
 class RecipeFilter(FilterSet):
     """Фильтр для сортировки рецептов."""
 
-    author = ModelChoiceFilter(queryset=User.objects.all())
     tags = ModelMultipleChoiceFilter(
         field_name="tags__slug",
         to_field_name="slug",
@@ -47,4 +46,4 @@ class RecipeFilter(FilterSet):
 class IngredientSearchFilter(SearchFilter):
     """Фильтр для поиска ингредиентов по названию."""
     name = CharFilter(field_name="name", lookup_expr="istartswith")
-    search_param = "name"
+    search_param = "name"  # Без этого поля не работает отбор на сайте, вернула
