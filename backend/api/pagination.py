@@ -1,20 +1,11 @@
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.response import Response
+
+from .constants import MAX_PAGE_SIZE, PAGE_SIZE
 
 
 class LimitPagePagination(PageNumberPagination):
     """Кастомная пагинация."""
 
-    page_size = 6
+    page_size = PAGE_SIZE
     page_size_query_param = "limit"
-    max_page_size = 100
-
-    def get_paginated_response(self, data):
-        return Response(
-            {
-                "count": self.page.paginator.count,
-                "next": self.get_next_link(),
-                "previous": self.get_previous_link(),
-                "results": data,
-            }
-        )
+    max_page_size = MAX_PAGE_SIZE
