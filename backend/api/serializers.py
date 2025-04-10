@@ -94,7 +94,7 @@ class TagSerializer(ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ["id", "name", "slug"]
+        fields = ("id", "name", "slug")
 
 
 class IngredientSerializer(ModelSerializer):
@@ -368,7 +368,7 @@ class FavoritesSerializer(ModelSerializer):
 
     class Meta:
         model = Favorites
-        fields = ["id", "name", "image", "cooking_time"]
+        fields = ("id", "name", "image", "cooking_time")
         validators = UniqueTogetherValidator(
             queryset=Favorites.objects.all(), fields=("user", "recipe")
         )
@@ -384,7 +384,7 @@ class ShoppingCartSerializer(ModelSerializer):
 
     class Meta:
         model = ShoppingCart
-        fields = ["id", "name", "image", "cooking_time"]
+        fields = ("id", "name", "image", "cooking_time")
         validators = [
             UniqueTogetherValidator(
                 queryset=ShoppingCart.objects.all(), fields=("user", "recipe")
