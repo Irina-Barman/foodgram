@@ -237,6 +237,11 @@ class RecipeWriteSerializer(ModelSerializer):
     def validate_ingredients(self, value):
         if not value:
             raise ValidationError({"ingredients": "Нужно выбрать ингредиент!"})
+        ingredient_ids = [ingredient["id"] for ingredient in value]
+        if len(ingredient_ids) != len(set(ingredient_ids)):
+            raise ValidationError(
+                {"ingredients": "Ингредиенты не должны повторяться!"}
+            )
         return value
 
     def validate_tags(self, value):
@@ -368,7 +373,7 @@ class BaseRecipeSerializer(ModelSerializer):
 
     class Meta:
         abstract = True
-        fields = ('id', 'name', 'image', 'cooking_time')
+        fields = ("id", "name", "image", "cooking_time")
 
 
 class FavoritesSerializer(BaseRecipeSerializer):
