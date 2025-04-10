@@ -119,31 +119,36 @@ class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
     """Вьюсет аватара пользователя."""
 
     serializer_class = AvatarSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         """Получает текущего пользователя."""
-        return get_object_or_404(User, pk=self.request.user.id)
+        return self.request.user
 
     def patch(self, request, *args, **kwargs):
         """Обновляет аватар пользователя."""
         user = self.get_object()
         serializer = self.get_serializer(user, data=request.data, partial=True)
+
         if not serializer.is_valid():
-            serializer.save()
             raise ValidationError(serializer.errors)
+
+        serializer.save()
         return Response(
             {"status": "Аватар обновлен"}, status=status.HTTP_200_OK
         )
 
     def delete(self, request, *args, **kwargs):
         """Удаляет аватар пользователя."""
-        try:
-            user = get_object_or_404(User, pk=self.request.user.id)
+        user = self.get_object()
+        if user.avatar:
             user.avatar.delete(save=False)
             user.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            return Response(e, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(
+                {"error": "Аватар не найден"}, status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class RecipeViewSet(ModelViewSet):

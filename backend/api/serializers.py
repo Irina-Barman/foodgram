@@ -1,7 +1,6 @@
 import re
 
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import (
@@ -354,27 +353,8 @@ class SubscriptionSerializer(ModelSerializer):
         ).exists()
 
 
-class FavoritesSerializer(ModelSerializer):
-    """Сериализатор для списка избранных рецептов."""
-
-    id = IntegerField()
-    name = CharField()
-    image = Base64ImageField(
-        max_length=None,
-        use_url=False,
-    )
-    cooking_time = IntegerField()
-
-    class Meta:
-        model = Favorites
-        fields = ("id", "name", "image", "cooking_time")
-        validators = UniqueTogetherValidator(
-            queryset=Favorites.objects.all(), fields=("user", "recipe")
-        )
-
-
-class ShoppingCartSerializer(ModelSerializer):
-    """Сериализатор для списка покупок."""
+class BaseRecipeSerializer(ModelSerializer):
+    """Общий базовый сериализатор для рецептов в избранном и корзине."""
 
     id = IntegerField()
     name = CharField()
@@ -382,8 +362,28 @@ class ShoppingCartSerializer(ModelSerializer):
     cooking_time = IntegerField()
 
     class Meta:
+        abstract = True
+
+
+class FavoritesSerializer(BaseRecipeSerializer):
+    """Сериализатор для списка избранных рецептов."""
+
+    class Meta(BaseRecipeSerializer.Meta):
+        model = Favorites
+        fields = BaseRecipeSerializer.Meta.fields
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Favorites.objects.all(), fields=("user", "recipe")
+            )
+        ]
+
+
+class ShoppingCartSerializer(BaseRecipeSerializer):
+    """Сериализатор для списка покупок."""
+
+    class Meta(BaseRecipeSerializer.Meta):
         model = ShoppingCart
-        fields = ("id", "name", "image", "cooking_time")
+        fields = BaseRecipeSerializer.Meta.fields
         validators = [
             UniqueTogetherValidator(
                 queryset=ShoppingCart.objects.all(), fields=("user", "recipe")
