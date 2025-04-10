@@ -372,8 +372,7 @@ class SubscriptionViewSet(ModelViewSet):
         """Удаляет подписку на автора."""
         author_id = self.kwargs["id"]
         author = get_object_or_404(User, id=author_id)
-
-        # Проверка подписки
+        
         validation_response = self.validate_subscription(request.user, author)
         if validation_response:
             return Response(*validation_response)
