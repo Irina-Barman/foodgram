@@ -329,15 +329,6 @@ class SubscriptionSerializer(ModelSerializer):
 
         return representation
 
-    def get_recipes(self, obj):
-        """Получение списка рецептов автора с учетом лимита."""
-        recipes = obj.author.recipes.all()
-        limit = self.context["request"].query_params.get("recipes_limit", None)
-        if limit:
-            recipes = recipes[: int(limit)]
-        serializer = RecipeSerializer(recipes, many=True)
-        return serializer.data
-
     def get_recipes_count(self, obj):
         """Получение количества рецептов автора."""
         return obj.author.recipes.count()
