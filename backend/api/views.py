@@ -78,7 +78,7 @@ class CustomUserViewSet(UserViewSet):
 
     @action(
         detail=False,
-        methods=["patch"],
+        methods=["put"],
         url_path="me/avatar",
         permission_classes=[IsAuthenticated],
     )
