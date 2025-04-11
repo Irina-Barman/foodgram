@@ -359,7 +359,7 @@ class SubscriptionViewSet(ModelViewSet):
         detail=True,
         methods=["post", "delete"],
         url_path="subscribe",
-        url_name="subscription",
+        url_name="subscribe",
     )
     def subscription(self, request, pk=None):
         """Создает или удаляет подписку на автора."""
