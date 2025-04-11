@@ -2,7 +2,6 @@ import re
 
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
-from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import (
     CharField,
@@ -28,34 +27,6 @@ from recipes.models import (
 from users.models import Subscription
 
 User = get_user_model()
-
-
-class ShortLinkSerializer(ModelSerializer):
-    """
-    Сериализатор для обработки запросов на создание короткой ссылки:
-
-    """
-
-    class Meta:
-        model = ShortLink
-        fields = "__all__"
-        extra_kwargs = {"full_url": {"validators": []}}
-
-    def create(self, validated_data):
-        """
-        Переопределенный метод create:
-        возвращает существующую ссылку
-        или создает новую и возвращает её.
-        """
-        full_url = validated_data["full_url"]
-        short_link, created = ShortLink.objects.get_or_create(
-            full_url=full_url
-        )
-        if created:
-            status_code = status.HTTP_201_CREATED
-        else:
-            status_code = status.HTTP_200_OK
-        return short_link, status_code
 
 
 class CustomUserSerializer(UserSerializer):
