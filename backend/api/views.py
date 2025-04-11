@@ -42,15 +42,27 @@ User = get_user_model()
 class ShortLinkView(APIView):
     """Вьюсет для генерации короткой ссылки на рецепт."""
 
-    def post(self, request):
-        serializer = ShortLinkSerializer(data=request.data)
+    def get(self, request):
+        # Получаем полный URL из параметров запроса
+        original_url = request.query_params.get("url")
+
+        if not original_url:
+            return Response(
+                {"error": "URL parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Используем сериализатор для создания или получения короткой ссылки
+        serializer = ShortLinkSerializer(data={"full_url": original_url})
         if serializer.is_valid(raise_exception=True):
+            # Создаем или получаем короткую ссылку
             short_link, status_code = serializer.create(
-                validated_data=serializer.validated_data
+                serializer.validated_data
             )
             return Response(
                 ShortLinkSerializer(short_link).data, status=status_code
             )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
