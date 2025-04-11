@@ -357,74 +357,64 @@ class SubscriptionViewSet(ModelViewSet):
 
     @action(
         detail=True,
-        methods=["post"],
+        methods=["post", "delete"],
         url_path="subscribe",
-        url_name="subscribe",
+        url_name="subscription",
     )
-    def subscribe(self, request, pk=None):
-        """Создает новую подписку на автора."""
+    def subscription(self, request, pk=None):
+        """Создает или удаляет подписку на автора."""
         author = get_object_or_404(User, id=pk)
         validation_response = self.validate_subscription(request.user, author)
 
         if validation_response:
             return Response(*validation_response)
 
-        if Subscription.objects.filter(
-            user=request.user, author=author
-        ).exists():
-            return Response(
-                {"detail": "Вы уже подписаны на данного автора."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        recipes_limit = request.query_params.get("recipes_limit", None)
-
-        if recipes_limit is not None:
-            try:
-                recipes_limit = int(recipes_limit)
-            except ValueError:
+        if request.method == "POST":
+            # Создание подписки
+            if Subscription.objects.filter(
+                user=request.user, author=author
+            ).exists():
                 return Response(
-                    {"error": "Некорректное значение для recipes_limit"},
+                    {"detail": "Вы уже подписаны на данного автора."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        subscribe = Subscription.objects.create(
-            user=request.user, author=author
-        )
-        serializer = SubscriptionSerializer(
-            subscribe,
-            context={"request": request, "recipes_limit": recipes_limit},
-        )
+            recipes_limit = request.query_params.get("recipes_limit", None)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            if recipes_limit is not None:
+                try:
+                    recipes_limit = int(recipes_limit)
+                except ValueError:
+                    return Response(
+                        {"error": "Некорректное значение для recipes_limit"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
-    @action(
-        detail=True,
-        methods=["delete"],
-        url_path="subscribe",
-        url_name="subscribe",
-    )
-    def unsubscribe(self, request, pk=None):
-        """Удаляет подписку на автора."""
-        author = get_object_or_404(User, id=pk)
+            subscribe = Subscription.objects.create(
+                user=request.user, author=author
+            )
+            serializer = SubscriptionSerializer(
+                subscribe,
+                context={"request": request, "recipes_limit": recipes_limit},
+            )
 
-        validation_response = self.validate_subscription(request.user, author)
-        if validation_response:
-            return Response(*validation_response)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        deleted, _ = Subscription.objects.filter(
-            user=request.user, author=author
-        ).delete()
+        elif request.method == "DELETE":
+            # Удаление подписки
+            deleted, _ = Subscription.objects.filter(
+                user=request.user, author=author
+            ).delete()
 
-        if not deleted:
-            raise ValidationError("Подписка не найдена.")
+            if not deleted:
+                raise ValidationError("Подписка не найдена.")
 
-        return Response(
-            {"detail": "Подписка удалена."}, status=status.HTTP_204_NO_CONTENT
-        )
+            return Response(
+                {"detail": "Подписка удалена."},
+                status=status.HTTP_204_NO_CONTENT,
+            )
 
-        # Отменяем стандартные действия list и create
-
+    # Отключаем стандартные действия list и create
     def list(self, request, *args, **kwargs):
         return Response(
             {"detail": "Этот метод отключен."},
