@@ -42,7 +42,7 @@ User = get_user_model()
 class ShortLinkView(APIView):
     """Вьюсет для генерации короткой ссылки на рецепт."""
 
-    def get(self, request):
+    def get(self, request, id):
         # Получаем полный URL из параметров запроса
         original_url = request.query_params.get("url")
 
