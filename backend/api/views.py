@@ -402,7 +402,7 @@ class SubscriptionViewSet(ModelViewSet):
         detail=True,
         methods=["delete"],
         url_path="subscribe",
-        url_name="unsubscribe",
+        url_name="subscribe",
     )
     def unsubscribe(self, request, pk=None):
         """Удаляет подписку на автора."""
