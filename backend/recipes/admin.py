@@ -102,6 +102,7 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     search_fields = ("recipe__name", "user__username")
     raw_id_fields = ("recipe", "user")
 
+
 @admin.register(ShortLink)
 class ShortLinkAdmin(admin.ModelAdmin):
     """Настройки админки для модели Токенов"""
