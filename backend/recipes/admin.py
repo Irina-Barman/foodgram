@@ -38,7 +38,7 @@ class RecipeAdmin(admin.ModelAdmin):
     search_fields = (
         "name",
         "recipe_tags__tag__name",
-        "recipe_ingredients__ingredient__name"
+        "recipe_ingredients__ingredient__name",
     )
 
     inlines = [RecipeTagInline, RecipeIngredientInline]  # Добавляем инлайны
@@ -106,12 +106,13 @@ class ShoppingCartAdmin(admin.ModelAdmin):
 @admin.register(ShortLink)
 class ShortLinkAdmin(admin.ModelAdmin):
     """Настройки админки для модели Токенов"""
+
     list_display = (
-        'full_url',
-        'short_url',
-        'requests_count',
-        'created_date',
-        'is_active'
+        "full_url",
+        "short_url",
+        "requests_count",
+        "created_date",
+        "is_active",
     )
-    search_fields = ('full_url', 'short_url')
-    ordering = ('-created_date',)
+    search_fields = ("full_url", "short_url")
+    ordering = ("-created_date",)
