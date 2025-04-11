@@ -28,26 +28,22 @@ from .serializers import (
     RecipeListSerializer,
     RecipeWriteSerializer,
     ShoppingCartSerializer,
+    ShortRecipeURLSerializer,
     SubscriptionSerializer,
     TagSerializer,
 )
-from recipes.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
+from recipes.models import (
+    Favorites,
+    Ingredient,
+    Recipe,
+    ShoppingCart,
+    ShortRecipeURL,
+    Tag,
+)
 from services.pdf_generator import generate_pdf
 from users.models import Subscription
 
 User = get_user_model()
-
-
-class GetLinkView(APIView):
-    """Вьюсет для генерации прямой ссылки на рецепт."""
-
-    def get(self, request, id):
-        recipe = get_object_or_404(Recipe, id=id)
-        base_url = request.build_absolute_uri("/")  # Получаем базовый URL
-        direct_link = (
-            f"{base_url}/recipes/{recipe.id}/"  # Создание полной ссылки
-        )
-        return Response({"short-link": direct_link}, status=status.HTTP_200_OK)
 
 
 class CustomUserViewSet(UserViewSet):
@@ -415,3 +411,25 @@ class SubscriptionViewSet(APIView):
         return Response(
             {"detail": "Подписка удалена."}, status=status.HTTP_204_NO_CONTENT
         )
+
+
+class ShotLinkView(APIView):
+    """Вьюсет короткой ссылки на рецепт."""
+
+    permission_classes = [AllowAny]
+
+    @staticmethod
+    def get(request, id):
+        try:
+            recipe = Recipe.objects.get(pk=id)
+            if not hasattr(recipe, "shortened_url"):
+                ShortRecipeURL.objects.create(recipe=recipe)
+            serializer = ShortRecipeURLSerializer(
+                recipe, context={"request": request}
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Recipe.DoesNotExist:
+            return Response(
+                {"detail": "Рецепт не найден."},
+                status=status.HTTP_404_NOT_FOUND,
+            )

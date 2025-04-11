@@ -21,6 +21,7 @@ from recipes.models import (
     Recipe,
     RecipeIngredient,
     ShoppingCart,
+    ShortRecipeURL,
     Tag,
 )
 from users.models import Subscription
@@ -400,3 +401,22 @@ class ShoppingCartSerializer(BaseRecipeSerializer):
                 queryset=ShoppingCart.objects.all(), fields=("user", "recipe")
             )
         ]
+
+
+class ShortRecipeURLSerializer(ModelSerializer):
+    "Сереализатор короткой ссылки рецепта."
+    short_link = SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        fields = ["short_link"]
+
+    def get_short_link(self, obj: ShortRecipeURL):
+        request = self.context.get("request")
+        short_code = obj.shortened_url.short_code
+        return request.build_absolute_uri(f"/s/{short_code}/")
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["short-link"] = representation.pop("short_link")
+        return representation

@@ -1,3 +1,6 @@
+import random
+import string
+
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -233,3 +236,33 @@ class ShoppingCart(models.Model):
 
     def __str__(self):
         return f"Рецепт {self.recipe} в корзине {self.user}"
+
+
+def generate_short_code(length=6):
+    characters = string.ascii_letters + string.digits
+    return "".join(random.choice(characters) for _ in range(length))
+
+
+class ShortRecipeURL(models.Model):
+    recipe = models.OneToOneField(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name="shortened_url",
+        verbose_name="Рецепт",
+    )
+    short_code = models.CharField(
+        max_length=6,
+        unique=True,
+        default=generate_short_code,
+        verbose_name="Код",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Время создания"
+    )
+
+    class Meta:
+        verbose_name = "Короткая ссылка"
+        verbose_name_plural = "Короткие ссылки"
+
+    def __str__(self):
+        return f"{self.short_code} -> {self.recipe.name}"
