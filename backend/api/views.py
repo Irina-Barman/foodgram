@@ -43,6 +43,9 @@ class ShortLinkView(APIView):
     """Вьюсет для генерации короткой ссылки на рецепт."""
 
     def get(self, request, id):
+        # Получаем рецепт по его id
+        recipe = get_object_or_404(Recipe, id=id)
+
         # Получаем полный URL из параметров запроса
         original_url = request.query_params.get("url")
 
@@ -52,6 +55,10 @@ class ShortLinkView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Формируем полный URL на рецепт
+        base_url = request.build_absolute_uri("/")
+        direct_link = f"{base_url}recipes/{recipe.id}/"
+
         # Используем сериализатор для создания или получения короткой ссылки
         serializer = ShortLinkSerializer(data={"full_url": original_url})
         if serializer.is_valid(raise_exception=True):
@@ -60,7 +67,11 @@ class ShortLinkView(APIView):
                 serializer.validated_data
             )
             return Response(
-                ShortLinkSerializer(short_link).data, status=status_code
+                {
+                    "short_link": ShortLinkSerializer(short_link).data,
+                    "direct_link": direct_link,
+                },
+                status=status_code,
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
