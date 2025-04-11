@@ -17,6 +17,7 @@ app_name = "api"
 router_v1 = DefaultRouter()
 router_v1.register("tags", TagViewSet)
 router_v1.register("users", CustomUserViewSet)
+router_v1.register("users", SubscriptionViewSet, basename="subscription")
 router_v1.register("ingredients", IngredientViewSet)
 router_v1.register("recipes", RecipeViewSet)
 
@@ -31,11 +32,6 @@ urlpatterns = [
     ),
     path(
         "recipes/<str:id>/get-link/", ShotLinkView.as_view(), name="get-link"
-    ),
-    path(
-        "users/<int:id>/subscribe/",
-        SubscriptionViewSet.as_view(),
-        name="subscribe",
     ),
     path(
         "recipes/<int:id>/shopping_cart/",

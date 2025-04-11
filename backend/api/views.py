@@ -336,12 +336,12 @@ class IngredientViewSet(ReadOnlyModelViewSet):
         return super().handle_exception(exc)
 
 
-class SubscriptionViewSet(APIView):
+class SubscriptionViewSet(ModelViewSet):
     """Вьюсет подписки"""
 
     serializer_class = SubscriptionSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     pagination_class = LimitPagePagination
-    permission_classes = [IsOwnerOrReadOnly]
 
     def validate_subscription(self, user, author):
         """Проверяет валидность подписки"""
@@ -355,10 +355,15 @@ class SubscriptionViewSet(APIView):
 
         return None
 
-    def post(self, request, *args, **kwargs):
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="subscribe",
+        url_name="subscribe",
+    )
+    def subscribe(self, request, pk=None):
         """Создает новую подписку на автора."""
-        user_id = self.kwargs["id"]
-        author = get_object_or_404(User, id=user_id)
+        author = get_object_or_404(User, id=pk)
         validation_response = self.validate_subscription(request.user, author)
 
         if validation_response:
@@ -371,6 +376,7 @@ class SubscriptionViewSet(APIView):
                 {"detail": "Вы уже подписаны на данного автора."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
         recipes_limit = request.query_params.get("recipes_limit", None)
 
         if recipes_limit is not None:
@@ -379,7 +385,7 @@ class SubscriptionViewSet(APIView):
             except ValueError:
                 return Response(
                     {"error": "Некорректное значение для recipes_limit"},
-                    status=400,
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
         subscribe = Subscription.objects.create(
@@ -392,10 +398,15 @@ class SubscriptionViewSet(APIView):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def delete(self, request, *args, **kwargs):
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path="subscribe",
+        url_name="unsubscribe",
+    )
+    def unsubscribe(self, request, pk=None):
         """Удаляет подписку на автора."""
-        author_id = self.kwargs["id"]
-        author = get_object_or_404(User, id=author_id)
+        author = get_object_or_404(User, id=pk)
 
         validation_response = self.validate_subscription(request.user, author)
         if validation_response:
@@ -410,6 +421,20 @@ class SubscriptionViewSet(APIView):
 
         return Response(
             {"detail": "Подписка удалена."}, status=status.HTTP_204_NO_CONTENT
+        )
+
+        # Отменяем стандартные действия list и create
+
+    def list(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Этот метод отключен."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Этот метод отключен."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
 
