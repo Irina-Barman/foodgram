@@ -10,7 +10,6 @@ from .views import (
     ShotLinkView,
     SubscriptionViewSet,
     TagViewSet,
-    UserAvatarUpdateView,
 )
 
 app_name = "api"
@@ -37,10 +36,5 @@ urlpatterns = [
         "recipes/<int:id>/shopping_cart/",
         ShoppingCartViewSet.as_view(),
         name="shopping_cart",
-    ),
-    path(
-        "users/me/avatar/",
-        UserAvatarUpdateView.as_view(),
-        name="user_avatar_update",
     ),
 ]

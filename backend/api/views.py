@@ -8,10 +8,7 @@ from rest_framework.exceptions import (
     PermissionDenied,
     ValidationError,
 )
-from rest_framework.generics import (
-    RetrieveUpdateDestroyAPIView,
-    get_object_or_404,
-)
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -56,26 +53,60 @@ class CustomUserViewSet(UserViewSet):
 
     @action(
         detail=False,
-        methods=["get", "patch"],
+        methods=["get"],
         permission_classes=[IsAuthenticated],
     )
     def me(self, request):
-        """Получает и обновляет информацию о текущем пользователе."""
-        if request.method == "PATCH":
-            serializer = self.serializer_class(
-                request.user,
-                data=request.data,
-                partial=True,
-                context={"request": request},
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        serializer = self.serializer_class(
-            request.user, context={"request": request}
-        )
+        """Получает информацию о текущем пользователе."""
+        user = request.user
+        serializer = self.serializer_class(user, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @me.mapping.patch
+    def update_me(self, request):
+        """Обновляет информацию о текущем пользователе."""
+        user = request.user
+        serializer = self.serializer_class(
+            user,
+            data=request.data,
+            partial=True,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
+        detail=False,
+        methods=["patch"],
+        url_path="me/avatar",
+        permission_classes=[IsAuthenticated],
+    )
+    def avatar(self, request):
+        """Обновляет аватар пользователя."""
+        user = request.user
+        serializer = AvatarSerializer(user, data=request.data, partial=True)
+
+        if not serializer.is_valid():
+            raise ValidationError(serializer.errors)
+
+        serializer.save()
+        return Response(
+            {"status": "Аватар обновлен"}, status=status.HTTP_200_OK
+        )
+
+    @avatar.mapping.delete
+    def delete_avatar(self, request):
+        """Удаляет аватар пользователя."""
+        user = request.user
+        if user.avatar:
+            user.avatar.delete(save=False)
+            user.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(
+                {"error": "Аватар не найден"}, status=status.HTTP_404_NOT_FOUND
+            )
 
     @action(detail=False, permission_classes=[IsOwnerOrReadOnly])
     def subscriptions(self, request):
@@ -109,42 +140,6 @@ class CustomUserViewSet(UserViewSet):
             queryset, many=True, context=context
         )
         return Response(serializer.data)
-
-
-class UserAvatarUpdateView(RetrieveUpdateDestroyAPIView):
-    """Вьюсет аватара пользователя."""
-
-    serializer_class = AvatarSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        """Получает текущего пользователя."""
-        return self.request.user
-
-    def patch(self, request, *args, **kwargs):
-        """Обновляет аватар пользователя."""
-        user = self.get_object()
-        serializer = self.get_serializer(user, data=request.data, partial=True)
-
-        if not serializer.is_valid():
-            raise ValidationError(serializer.errors)
-
-        serializer.save()
-        return Response(
-            {"status": "Аватар обновлен"}, status=status.HTTP_200_OK
-        )
-
-    def delete(self, request, *args, **kwargs):
-        """Удаляет аватар пользователя."""
-        user = self.get_object()
-        if user.avatar:
-            user.avatar.delete(save=False)
-            user.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        else:
-            return Response(
-                {"error": "Аватар не найден"}, status=status.HTTP_404_NOT_FOUND
-            )
 
 
 class RecipeViewSet(ModelViewSet):
