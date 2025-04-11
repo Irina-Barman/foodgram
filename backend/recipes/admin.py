@@ -8,6 +8,7 @@ from .models import (
     RecipeIngredient,
     RecipeTag,
     ShoppingCart,
+    ShortLink,
     Tag,
 )
 
@@ -100,3 +101,16 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = ("id", "recipe", "user")
     search_fields = ("recipe__name", "user__username")
     raw_id_fields = ("recipe", "user")
+
+@admin.register(ShortLink)
+class ShortLinkAdmin(admin.ModelAdmin):
+    """Настройки админки для модели Токенов"""
+    list_display = (
+        'full_url',
+        'short_url',
+        'requests_count',
+        'created_date',
+        'is_active'
+    )
+    search_fields = ('full_url', 'short_url')
+    ordering = ('-created_date',)
