@@ -46,6 +46,18 @@ from users.models import Subscription
 User = get_user_model()
 
 
+class GetLinkView(APIView):
+    """Вьюсет для генерации прямой ссылки на рецепт."""
+
+    def get(self, request, id):
+        recipe = get_object_or_404(Recipe, id=id)
+        base_url = request.build_absolute_uri("/")  # Получаем базовый URL
+        direct_link = (
+            f"{base_url}/recipes/{recipe.id}/"  # Создание полной ссылки
+        )
+        return Response({"short-link": direct_link}, status=status.HTTP_200_OK)
+
+
 class CustomUserViewSet(UserViewSet):
     """Вьюсет для модели пользователя."""
 
