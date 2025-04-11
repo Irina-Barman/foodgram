@@ -413,7 +413,7 @@ class ShortRecipeURLSerializer(ModelSerializer):
 
     def get_short_link(self, obj: ShortRecipeURL):
         request = self.context.get("request")
-        short_code = obj.shortened_url.short_code
+        short_code = obj.short_url.short_code
         return request.build_absolute_uri(f"/s/{short_code}/")
 
     def to_representation(self, instance):
