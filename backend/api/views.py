@@ -422,7 +422,7 @@ class ShotLinkView(APIView):
     def get(request, id):
         try:
             recipe = Recipe.objects.get(pk=id)
-            if not hasattr(recipe, "shortened_url"):
+            if not hasattr(recipe, "short_url"):
                 ShortRecipeURL.objects.create(recipe=recipe)
             serializer = ShortRecipeURLSerializer(
                 recipe, context={"request": request}

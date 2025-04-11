@@ -14,6 +14,7 @@ from api.constants import (
     MAX_VALUE,
     MIN_TIME,
     MIN_VALUE,
+    URL_LENGTH,
 )
 
 User = get_user_model()
@@ -238,7 +239,7 @@ class ShoppingCart(models.Model):
         return f"Рецепт {self.recipe} в корзине {self.user}"
 
 
-def generate_short_code(length=6):
+def generate_short_code(length=URL_LENGTH):
     characters = string.ascii_letters + string.digits
     return "".join(random.choice(characters) for _ in range(length))
 
@@ -247,7 +248,7 @@ class ShortRecipeURL(models.Model):
     recipe = models.OneToOneField(
         Recipe,
         on_delete=models.CASCADE,
-        related_name="shortened_url",
+        related_name="short_url",
         verbose_name="Рецепт",
     )
     short_code = models.CharField(
