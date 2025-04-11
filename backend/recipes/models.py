@@ -1,8 +1,11 @@
+import random
+
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from api.constants import (
+    CHARACTERS,
     MAX_INGREDIENTS_NAME_LENGTH,
     MAX_RECIPES_NAME_LENGTH,
     MAX_TAG_LENGTH,
@@ -11,6 +14,7 @@ from api.constants import (
     MAX_VALUE,
     MIN_TIME,
     MIN_VALUE,
+    URL_LENGTH,
 )
 
 User = get_user_model()
@@ -233,3 +237,36 @@ class ShoppingCart(models.Model):
 
     def __str__(self):
         return f"Рецепт {self.recipe} в корзине {self.user}"
+
+
+class ShortLink(models.Model):
+    "Модель генератора короткой ссылки рецепта."
+
+    full_url = models.URLField(unique=True)
+    short_url = models.CharField(
+        max_length=20, unique=True, db_index=True, blank=True
+    )
+    requests_count = models.IntegerField(default=0)
+    created_date = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ("-created_date",)  # сортировка по дате создания
+
+    def save(self, *args, **kwargs):
+        """
+        Перед сохранением объекта проверяется на уникальность.
+        """
+        if not self.short_url:
+            while True:
+                self.short_url = "".join(
+                    random.choices(CHARACTERS, k=URL_LENGTH)
+                )
+                if not ShortLink.objects.filter(  # проверка на уникальность
+                    short_url=self.short_url
+                ).exists():
+                    break
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.short_url} -> {self.full_url}"

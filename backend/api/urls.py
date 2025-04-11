@@ -4,10 +4,10 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     CustomUserViewSet,
     FavoritesViewSet,
-    GetLinkView,
     IngredientViewSet,
     RecipeViewSet,
     ShoppingCartViewSet,
+    ShortLinkView,
     SubscriptionViewSet,
     TagViewSet,
     UserAvatarUpdateView,
@@ -29,7 +29,9 @@ urlpatterns = [
         FavoritesViewSet.as_view(),
         name="favorite",
     ),
-    path("recipes/<str:id>/get-link/", GetLinkView.as_view(), name="get-link"),
+    path(
+        "recipes/<str:id>/get-link/", ShortLinkView.as_view(), name="get-link"
+    ),
     path(
         "users/<int:id>/subscribe/",
         SubscriptionViewSet.as_view(),

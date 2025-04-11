@@ -21,6 +21,7 @@ from recipes.models import (
     Recipe,
     RecipeIngredient,
     ShoppingCart,
+    ShortLink,
     Tag,
 )
 from users.models import Subscription
@@ -400,3 +401,31 @@ class ShoppingCartSerializer(BaseRecipeSerializer):
                 queryset=ShoppingCart.objects.all(), fields=("user", "recipe")
             )
         ]
+
+
+class ShortLinkSerializer(ModelSerializer):
+    """
+    Сериализатор для обработки запросов на создание короткой ссылки:
+
+    """
+
+    class Meta:
+        model = ShortLink
+        fields = "__all__"
+        extra_kwargs = {"full_url": {"validators": []}}
+
+    def create(self, validated_data):
+        """
+        Переопределенный метод create:
+        возвращает существующую ссылку
+        или создает новую и возвращает её.
+        """
+        full_url = validated_data["full_url"]
+        short_link, created = ShortLink.objects.get_or_create(
+            full_url=full_url
+        )
+        if created:
+            status_code = status.HTTP_201_CREATED
+        else:
+            status_code = status.HTTP_200_OK
+        return short_link, status_code

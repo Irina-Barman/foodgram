@@ -28,6 +28,7 @@ from .serializers import (
     RecipeListSerializer,
     RecipeWriteSerializer,
     ShoppingCartSerializer,
+    ShortLinkSerializer,
     SubscriptionSerializer,
     TagSerializer,
 )
@@ -38,16 +39,19 @@ from users.models import Subscription
 User = get_user_model()
 
 
-class GetLinkView(APIView):
-    """Вьюсет для генерации прямой ссылки на рецепт."""
+class ShortLinkView(APIView):
+    """Вьюсет для генерации короткой ссылки на рецепт."""
 
-    def get(self, request, id):
-        recipe = get_object_or_404(Recipe, id=id)
-        base_url = request.build_absolute_uri("/")  # Получаем базовый URL
-        direct_link = (
-            f"{base_url}/recipes/{recipe.id}/"  # Создание полной ссылки
-        )
-        return Response({"short-link": direct_link}, status=status.HTTP_200_OK)
+    def post(self, request):
+        serializer = ShortLinkSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            short_link, status_code = serializer.create(
+                validated_data=serializer.validated_data
+            )
+            return Response(
+                ShortLinkSerializer(short_link).data, status=status_code
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomUserViewSet(UserViewSet):
