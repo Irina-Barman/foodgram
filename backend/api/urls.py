@@ -29,7 +29,9 @@ urlpatterns = [
         FavoritesViewSet.as_view(),
         name="favorite",
     ),
-    path("recipes/<str:id>/get-link/", ShotLinkView.as_view(), name="get-link"),
+    path(
+        "recipes/<str:id>/get-link/", ShotLinkView.as_view(), name="get-link"
+    ),
     path(
         "users/<int:id>/subscribe/",
         SubscriptionViewSet.as_view(),
