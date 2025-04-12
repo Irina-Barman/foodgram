@@ -3,11 +3,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import filters, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import (
-    AuthenticationFailed,
-    PermissionDenied,
-    ValidationError,
-)
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -51,6 +47,13 @@ class CustomUserViewSet(UserViewSet):
     serializer_class = CustomUserSerializer
     permission_classes = [AllowAny]
 
+    def _change_avatar(self, data):
+        instance = self.get_instance()
+        serializer = AvatarSerializer(instance, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer
+
     @action(
         detail=False,
         methods=["get"],
@@ -77,45 +80,24 @@ class CustomUserViewSet(UserViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
+        methods=['put'],
         detail=False,
-        methods=["put"],
-        url_path="me/avatar",
         permission_classes=[IsAuthenticated],
+        url_path='me/avatar',
+        url_name='me-avatar',
     )
     def avatar(self, request):
-        """Обновляет аватар пользователя."""
-        user = request.user
-        if "avatar" not in request.data:
-            return Response(
-                {"error": "Аватар не добавлен."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        serializer = AvatarSerializer(user, data=request.data, partial=True)
-
-        if not serializer.is_valid():
-            raise ValidationError(serializer.errors)
-
-        serializer.save()
-        return Response(
-            {
-                "status": "Аватар обновлен",
-                "avatar": serializer.data.get("avatar"),
-            },
-            status=status.HTTP_200_OK,
-        )
+        """Добавление или удаление аватара"""
+        serializer = self._change_avatar(request.data)
+        return Response(serializer.data)
 
     @avatar.mapping.delete
     def delete_avatar(self, request):
-        """Удаляет аватар пользователя."""
-        user = request.user
-        if user.avatar:
-            user.avatar.delete(save=False)
-            user.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        else:
-            return Response(
-                {"error": "Аватар не найден"}, status=status.HTTP_404_NOT_FOUND
-            )
+        data = request.data
+        if 'avatar' not in data:
+            data = {'avatar': None}
+        self._change_avatar(data)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=True,
