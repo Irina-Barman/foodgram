@@ -8,7 +8,6 @@ from .views import (
     RecipeViewSet,
     ShoppingCartViewSet,
     ShotLinkView,
-    SubscriptionViewSet,
     TagViewSet,
 )
 
@@ -16,7 +15,6 @@ app_name = "api"
 router_v1 = DefaultRouter()
 router_v1.register("tags", TagViewSet)
 router_v1.register("users", CustomUserViewSet)
-router_v1.register("users", SubscriptionViewSet, basename="subscribe")
 router_v1.register("ingredients", IngredientViewSet)
 router_v1.register("recipes", RecipeViewSet)
 
