@@ -16,7 +16,6 @@ from .permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
 from .serializers import (
     AvatarSerializer,
     CustomUserSerializer,
-    FavoritesSerializer,
     IngredientSerializer,
     RecipeListSerializer,
     RecipeWriteSerializer,
