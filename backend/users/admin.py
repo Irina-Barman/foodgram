@@ -10,6 +10,7 @@ admin.site.unregister(Group)
 admin.site.unregister(TokenProxy)
 
 
+@admin.register(CustomUser)
 class UserAdmin(BaseUserAdmin):
     """Класс для представления модели пользователя в админ-зоне."""
 
@@ -39,13 +40,10 @@ class UserAdmin(BaseUserAdmin):
     avatar_display.short_description = "Аватар"
 
 
+@admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
     """Класс для представления модели подписок в админ-зоне."""
 
     list_display = ("user", "author", "id")
     search_fields = ("user__username", "author__username")
     list_filter = ("id",)
-
-
-admin.site.register(CustomUser, UserAdmin)
-admin.site.register(Subscription, SubscriptionAdmin)
