@@ -238,7 +238,9 @@ class RecipeViewSet(ModelViewSet):
         )
         return Response(response_serializer.data)
 
-    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    @action(
+        detail=True, methods=["post"], permission_classes=[IsAuthenticated]
+    )
     def favorite(self, request, pk=None):
         """Добавляет рецепт в список избранного."""
         recipe = get_object_or_404(Recipe, pk=pk)
