@@ -284,6 +284,7 @@ class RecipeViewSet(ModelViewSet):
     def shopping_cart(self, request, pk=None):
         """Добавляет рецепт в список покупок."""
         recipe = get_object_or_404(Recipe, pk=pk)
+
         if ShoppingCart.objects.filter(
             user=request.user, recipe=recipe
         ).exists():
@@ -291,32 +292,31 @@ class RecipeViewSet(ModelViewSet):
                 {"detail": "Рецепт уже в списке покупок."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        shopping_cart_item = ShoppingCart.objects.create(
-            user=request.user, recipe=recipe
-        )
-        response_serializer = ShoppingCartSerializer(shopping_cart_item)
+
+        ShoppingCart.objects.create(user=request.user, recipe=recipe)
+
+        response_serializer = ShoppingCartSerializer(recipe)
+
         return Response(
-            response_serializer.data,
-            status=status.HTTP_201_CREATED,
+            response_serializer.data, status=status.HTTP_201_CREATED
         )
 
     @shopping_cart.mapping.delete
-    def remove_from_cart(self, request, pk=None):
+    def remove_from_shopping_cart(self, request, pk=None):
         """Удаляет рецепт из списка покупок."""
         recipe = get_object_or_404(Recipe, pk=pk)
-        cart_item = ShoppingCart.objects.filter(
+
+        deleted_count = ShoppingCart.objects.filter(
             user=request.user, recipe=recipe
-        )
-        if cart_item.exists():
-            cart_item.delete()
+        ).delete()
+
+        if deleted_count[0] == 0:
             return Response(
-                {"detail": "Рецепт удален из списка покупок."},
-                status=status.HTTP_204_NO_CONTENT,
+                {"detail": "Рецепт не найден в списке покупок."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-        return Response(
-            {"detail": "Рецепт не найден в списке покупок."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=False, methods=["get"], permission_classes=[IsAuthenticated]
