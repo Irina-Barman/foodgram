@@ -5,7 +5,6 @@ from .views import (
     CustomUserViewSet,
     IngredientViewSet,
     RecipeViewSet,
-    ShoppingCartViewSet,
     ShotLinkView,
     TagViewSet,
 )
@@ -23,10 +22,5 @@ urlpatterns = [
     re_path(r"^auth/", include("djoser.urls.authtoken")),
     path(
         "recipes/<str:id>/get-link/", ShotLinkView.as_view(), name="get-link"
-    ),
-    path(
-        "recipes/<int:id>/shopping_cart/",
-        ShoppingCartViewSet.as_view(),
-        name="shopping_cart",
     ),
 ]

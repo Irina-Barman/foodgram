@@ -251,13 +251,10 @@ class RecipeViewSet(ModelViewSet):
                 {"detail": "Этот рецепт уже в вашем избранном."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
         Favorites.objects.create(user=request.user, recipe=recipe)
-
         response_serializer = FavoritesSerializer(
             recipe, context={"request": request}
         )
-
         return Response(
             response_serializer.data,
             status=status.HTTP_201_CREATED,
@@ -278,6 +275,44 @@ class RecipeViewSet(ModelViewSet):
             )
         return Response(
             {"detail": "Рецепт не найден в избранном."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    @action(
+        detail=True, methods=["post"], permission_classes=[IsAuthenticated]
+    )
+    def shopping_cart(self, request, pk=None):
+        """Добавляет рецепт в список покупок."""
+        recipe = get_object_or_404(Recipe, pk=pk)
+
+        if ShoppingCart.objects.filter(
+            user=request.user, recipe=recipe
+        ).exists():
+            return Response(
+                {"detail": "Рецепт уже в списке покупок."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        ShoppingCart.objects.create(user=request.user, recipe=recipe)
+        return Response(
+            {"detail": "Рецепт добавлен в список покупок."},
+            status=status.HTTP_201_CREATED,
+        )
+
+    @shopping_cart.mapping.delete
+    def remove_from_cart(self, request, pk=None):
+        """Удаляет рецепт из списка покупок."""
+        recipe = get_object_or_404(Recipe, pk=pk)
+        cart_item = ShoppingCart.objects.filter(
+            user=request.user, recipe=recipe
+        )
+        if cart_item.exists():
+            cart_item.delete()
+            return Response(
+                {"detail": "Рецепт удален из списка покупок."},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        return Response(
+            {"detail": "Рецепт не найден в списке покупок."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -312,57 +347,6 @@ class RecipeViewSet(ModelViewSet):
         ]
 
         return generate_pdf(ingredient_list)
-
-
-class BaseRecipeViewSet(APIView):
-    """Базовый вьюсет для работы с рецептами в избранном и корзине."""
-
-    permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
-
-    def handle_post(self, request, recipe_id, model, serializer_class):
-        """Обрабатывает POST запрос для добавления рецепта в модель."""
-        recipe = get_object_or_404(Recipe, id=recipe_id)
-
-        if model.objects.filter(user=request.user, recipe=recipe).exists():
-            return Response(
-                {"detail": "Рецепт уже в списке."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        model.objects.create(user=request.user, recipe=recipe)
-        serializer = serializer_class(recipe)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def handle_delete(self, request, recipe_id, model):
-        """Обрабатывает DELETE запрос для удаления рецепта из модели."""
-        recipe = get_object_or_404(Recipe, id=recipe_id)
-
-        deleted, _ = model.objects.filter(
-            user=request.user, recipe=recipe
-        ).delete()
-        if not deleted:
-            raise ValidationError("Рецепт не найден в списке.")
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class ShoppingCartViewSet(BaseRecipeViewSet):
-    """Вьюсет списка покупок."""
-
-    serializer_class = ShoppingCartSerializer
-    queryset = ShoppingCart.objects.all()
-
-    def post(self, request, *args, **kwargs):
-        """Добавляет рецепт в список покупок."""
-        recipe_id = self.kwargs["id"]
-        return self.handle_post(
-            request, recipe_id, ShoppingCart, self.serializer_class
-        )
-
-    def delete(self, request, *args, **kwargs):
-        """Удаляет рецепт из списка покупок."""
-        recipe_id = self.kwargs["id"]
-        return self.handle_delete(request, recipe_id, ShoppingCart)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
