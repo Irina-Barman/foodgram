@@ -284,7 +284,6 @@ class RecipeViewSet(ModelViewSet):
     def shopping_cart(self, request, pk=None):
         """Добавляет рецепт в список покупок."""
         recipe = get_object_or_404(Recipe, pk=pk)
-
         if ShoppingCart.objects.filter(
             user=request.user, recipe=recipe
         ).exists():
@@ -292,9 +291,12 @@ class RecipeViewSet(ModelViewSet):
                 {"detail": "Рецепт уже в списке покупок."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        ShoppingCart.objects.create(user=request.user, recipe=recipe)
+        shopping_cart_item = ShoppingCart.objects.create(
+            user=request.user, recipe=recipe
+        )
+        response_serializer = ShoppingCartSerializer(shopping_cart_item)
         return Response(
-            {"detail": "Рецепт добавлен в список покупок."},
+            response_serializer.data,
             status=status.HTTP_201_CREATED,
         )
 
