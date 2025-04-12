@@ -23,11 +23,6 @@ urlpatterns = [
     path("", include("djoser.urls")),
     re_path(r"^auth/", include("djoser.urls.authtoken")),
     path(
-        "recipes/<int:id>/favorite/",
-        FavoritesViewSet.as_view(),
-        name="favorite",
-    ),
-    path(
         "recipes/<str:id>/get-link/", ShotLinkView.as_view(), name="get-link"
     ),
     path(

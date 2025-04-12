@@ -243,6 +243,38 @@ class RecipeViewSet(ModelViewSet):
         return Response(response_serializer.data)
 
     @action(
+        detail=True, methods=["post"], permission_classes=[IsAuthenticated]
+    )
+    def favorite(self, request, id=None):
+        """Добавляет рецепт в список избранного."""
+        recipe = get_object_or_404(Recipe, id=id)
+        Favorites.objects.get_or_create(user=request.user, recipe=recipe)
+        return Response(
+            {"detail": "Рецепт добавлен в избранное."},
+            status=status.HTTP_201_CREATED,
+        )
+
+    @favorite.mapping.delete
+    def unfavorite(self, request, id=None):
+        """Удаляет рецепт из списка избранного."""
+        recipe = get_object_or_404(Recipe, id=id)
+        favorite_item = Favorites.objects.filter(
+            user=request.user, recipe=recipe
+        )
+
+        if favorite_item.exists():
+            favorite_item.delete()
+            return Response(
+                {"detail": "Рецепт удален из избранного."},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+
+        return Response(
+            {"detail": "Рецепт не найден в избранном."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    @action(
         detail=False, methods=["get"], permission_classes=[IsAuthenticated]
     )
     def download_shopping_cart(self, request):
@@ -305,25 +337,6 @@ class BaseRecipeViewSet(APIView):
             raise ValidationError("Рецепт не найден в списке.")
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class FavoritesViewSet(BaseRecipeViewSet):
-    """Вьюсет списка избранных рецептов."""
-
-    serializer_class = FavoritesSerializer
-    queryset = Favorites.objects.all()
-
-    def post(self, request, *args, **kwargs):
-        """Добавляет рецепт в список избранного."""
-        recipe_id = self.kwargs["id"]
-        return self.handle_post(
-            request, recipe_id, Favorites, self.serializer_class
-        )
-
-    def delete(self, request, *args, **kwargs):
-        """Удаляет рецепт из списка избранного."""
-        recipe_id = self.kwargs["id"]
-        return self.handle_delete(request, recipe_id, Favorites)
 
 
 class ShoppingCartViewSet(BaseRecipeViewSet):
