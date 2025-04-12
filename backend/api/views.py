@@ -16,6 +16,7 @@ from .permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
 from .serializers import (
     AvatarSerializer,
     CustomUserSerializer,
+    FavoritesSerializer,
     IngredientSerializer,
     RecipeListSerializer,
     RecipeWriteSerializer,
@@ -244,30 +245,37 @@ class RecipeViewSet(ModelViewSet):
     @action(
         detail=True, methods=["post"], permission_classes=[IsAuthenticated]
     )
-    def favorite(self, request, id=None):
+    def favorite(self, request, pk=None):
         """Добавляет рецепт в список избранного."""
-        recipe = get_object_or_404(Recipe, id=id)
+        recipe = get_object_or_404(Recipe, id=pk)
+        favorite_item, created = Favorites.objects.get_or_create(
+            user=request.user, recipe=recipe
+        )
 
-        Favorites.objects.get_or_create(user=request.user, recipe=recipe)
-
+        if created:
+            return Response(
+                FavoritesSerializer(favorite_item).data,
+                status=status.HTTP_201_CREATED,
+            )
         return Response(
-            {"detail": "Рецепт добавлен в избранное."},
-            status=status.HTTP_201_CREATED,
+            {"detail": "Рецепт уже в избранном."},
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
     @favorite.mapping.delete
-    def unfavorite(self, request, id=None):
+    def unfavorite(self, request, pk=None):
         """Удаляет рецепт из списка избранного."""
-        recipe = get_object_or_404(Recipe, id=id)
+        recipe = get_object_or_404(Recipe, id=pk)
 
         favorite_item = Favorites.objects.filter(
             user=request.user, recipe=recipe
         )
 
         if favorite_item.exists():
+            favorite_item_instance = favorite_item.first()
             favorite_item.delete()
             return Response(
-                {"detail": "Рецепт удален из избранного."},
+                FavoritesSerializer(favorite_item_instance).data,
                 status=status.HTTP_204_NO_CONTENT,
             )
 
