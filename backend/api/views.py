@@ -164,9 +164,12 @@ class CustomUserViewSet(UserViewSet):
 
     @action(detail=False, permission_classes=[IsOwnerOrReadOnly])
     def subscriptions(self, request):
-        """Возвращает список подписок текущего пользователя."""
+        """Возвращает список подписок текущего пользователя с учетом лимита."""
         queryset = self.request.user.subscriptions.all()
         recipes_limit = self._get_recipes_limit(request)
+
+        if recipes_limit is not None:
+            queryset = queryset[:recipes_limit]
 
         context = (
             {"recipes_limit": recipes_limit}
