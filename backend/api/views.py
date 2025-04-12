@@ -85,10 +85,10 @@ class CustomUserViewSet(UserViewSet):
     def avatar(self, request):
         """Обновляет аватар пользователя."""
         user = request.user
-        if 'avatar' not in request.data:
+        if "avatar" not in request.data:
             return Response(
                 {"error": "Аватар не добавлен."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
         serializer = AvatarSerializer(user, data=request.data, partial=True)
 
@@ -96,10 +96,13 @@ class CustomUserViewSet(UserViewSet):
             raise ValidationError(serializer.errors)
 
         serializer.save()
-        return Response({
-            "status": "Аватар обновлен",
-            "avatar": serializer.data.get("avatar")
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "status": "Аватар обновлен",
+                "avatar": serializer.data.get("avatar"),
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @avatar.mapping.delete
     def delete_avatar(self, request):
@@ -114,7 +117,70 @@ class CustomUserViewSet(UserViewSet):
                 {"error": "Аватар не найден"}, status=status.HTTP_404_NOT_FOUND
             )
 
-    @action(detail=False, permission_classes=[IsOwnerOrReadOnly])
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="subscribe",
+        permission_classes=[IsAuthenticated],
+    )
+    def subscribe(self, request, pk=None):
+        """Создает подписку на автора."""
+        author = get_object_or_404(User, id=pk)
+
+        if request.user.id == author.id:
+            return Response(
+                {"detail": "Нельзя подписаться на самого себя."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if Subscription.objects.filter(
+            user=request.user, author=author
+        ).exists():
+            return Response(
+                {"detail": "Вы уже подписаны на данного автора."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        recipes_limit = request.query_params.get("recipes_limit", None)
+        if recipes_limit is not None:
+            try:
+                recipes_limit = int(recipes_limit)
+            except ValueError:
+                return Response(
+                    {"error": "Некорректное значение для recipes_limit"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        subscribe = Subscription.objects.create(
+            user=request.user, author=author
+        )
+        serializer = SubscriptionSerializer(
+            subscribe,
+            context={"request": request, "recipes_limit": recipes_limit},
+        )
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @subscribe.mapping.delete
+    def unsubscribe(self, request, pk=None):
+        """Удаляет подписку на автора."""
+        author = get_object_or_404(User, id=pk)
+
+        deleted, _ = Subscription.objects.filter(
+            user=request.user, author=author
+        ).delete()
+
+        if not deleted:
+            raise ValidationError("Подписка не найдена.")
+
+        return Response(
+            {"detail": "Подписка удалена."},
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+    @action(
+        detail=False, methods=["get"], permission_classes=[IsOwnerOrReadOnly]
+    )
     def subscriptions(self, request):
         """Возвращает список подписок текущего пользователя."""
         queryset = self.request.user.subscriptions.all()
@@ -123,29 +189,25 @@ class CustomUserViewSet(UserViewSet):
         if recipes_limit is not None:
             try:
                 recipes_limit = int(recipes_limit)
+                if recipes_limit < 1:
+                    return Response(
+                        {
+                            "error": (
+                                "recipes_limit должно быть"
+                                "положительным числом."
+                            )
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             except ValueError:
                 return Response(
                     {"error": "Некорректное значение для recipes_limit"},
-                    status=400,
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
-        context = (
-            {"recipes_limit": recipes_limit}
-            if recipes_limit is not None
-            else {}
-        )
+            queryset = queryset[:recipes_limit]
 
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = SubscriptionSerializer(
-                page, many=True, context=context
-            )
-            return self.get_paginated_response(serializer.data)
-
-        serializer = SubscriptionSerializer(
-            queryset, many=True, context=context
-        )
-        return Response(serializer.data)
+        serializer = SubscriptionSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class RecipeViewSet(ModelViewSet):
@@ -335,98 +397,6 @@ class IngredientViewSet(ReadOnlyModelViewSet):
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
         return super().handle_exception(exc)
-
-
-class SubscriptionViewSet(ModelViewSet):
-    """Вьюсет подписки"""
-
-    serializer_class = SubscriptionSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
-    pagination_class = LimitPagePagination
-
-    def validate_subscription(self, user, author):
-        """Проверяет валидность подписки"""
-        if not user.is_authenticated:
-            raise AuthenticationFailed("Пользователь не авторизован.")
-
-        if user.id == author.id:
-            return {
-                "detail": "Нельзя подписаться на самого себя."
-            }, status.HTTP_400_BAD_REQUEST
-
-        return None
-
-    @action(
-        detail=True,
-        methods=["post", "delete"],
-        url_path="subscribe",
-        url_name="subscribe",
-    )
-    def subscription(self, request, pk=None):
-        """Создает или удаляет подписку на автора."""
-        author = get_object_or_404(User, id=pk)
-        validation_response = self.validate_subscription(request.user, author)
-
-        if validation_response:
-            return Response(*validation_response)
-
-        if request.method == "POST":
-            # Создание подписки
-            if Subscription.objects.filter(
-                user=request.user, author=author
-            ).exists():
-                return Response(
-                    {"detail": "Вы уже подписаны на данного автора."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            recipes_limit = request.query_params.get("recipes_limit", None)
-
-            if recipes_limit is not None:
-                try:
-                    recipes_limit = int(recipes_limit)
-                except ValueError:
-                    return Response(
-                        {"error": "Некорректное значение для recipes_limit"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-            subscribe = Subscription.objects.create(
-                user=request.user, author=author
-            )
-            serializer = SubscriptionSerializer(
-                subscribe,
-                context={"request": request, "recipes_limit": recipes_limit},
-            )
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        elif request.method == "DELETE":
-            # Удаление подписки
-            deleted, _ = Subscription.objects.filter(
-                user=request.user, author=author
-            ).delete()
-
-            if not deleted:
-                raise ValidationError("Подписка не найдена.")
-
-            return Response(
-                {"detail": "Подписка удалена."},
-                status=status.HTTP_204_NO_CONTENT,
-            )
-
-    # Отключаем стандартные действия list и create
-    def list(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Этот метод отключен."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
-
-    def create(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Этот метод отключен."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
 
 
 class ShotLinkView(APIView):
