@@ -54,10 +54,20 @@ class CustomUserViewSet(UserViewSet):
         serializer.save()
         return serializer
 
+    def _get_recipes_limit(self, request):
+        """Обрабатывает параметр recipes_limit."""
+        recipes_limit = request.query_params.get("recipes_limit", None)
+        if recipes_limit is not None:
+            try:
+                return int(recipes_limit)
+            except ValueError:
+                raise ValidationError(
+                    "Некорректное значение для recipes_limit"
+                )
+        return None
+
     @action(
-        detail=False,
-        methods=["get"],
-        permission_classes=[IsAuthenticated],
+        detail=False, methods=["get"], permission_classes=[IsAuthenticated]
     )
     def me(self, request):
         """Получает информацию о текущем пользователе."""
@@ -87,12 +97,13 @@ class CustomUserViewSet(UserViewSet):
         url_name="me-avatar",
     )
     def avatar(self, request):
-        """Добавление или удаление аватара"""
+        """Добавляет аватар."""
         serializer = self._change_avatar(request.data)
         return Response(serializer.data)
 
     @avatar.mapping.delete
     def delete_avatar(self, request):
+        """Удаляет аватар."""
         data = request.data
         if "avatar" not in data:
             data = {"avatar": None}
@@ -123,15 +134,7 @@ class CustomUserViewSet(UserViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        recipes_limit = request.query_params.get("recipes_limit", None)
-        if recipes_limit is not None:
-            try:
-                recipes_limit = int(recipes_limit)
-            except ValueError:
-                return Response(
-                    {"error": "Некорректное значение для recipes_limit"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        recipes_limit = self._get_recipes_limit(request)
 
         subscribe = Subscription.objects.create(
             user=request.user, author=author
@@ -156,42 +159,32 @@ class CustomUserViewSet(UserViewSet):
             raise ValidationError("Подписка не найдена.")
 
         return Response(
-            {"detail": "Подписка удалена."},
-            status=status.HTTP_204_NO_CONTENT,
+            {"detail": "Подписка удалена."}, status=status.HTTP_204_NO_CONTENT
         )
 
-    @action(
-        detail=False, methods=["get"], permission_classes=[IsOwnerOrReadOnly]
-    )
+    @action(detail=False, permission_classes=[IsOwnerOrReadOnly])
     def subscriptions(self, request):
         """Возвращает список подписок текущего пользователя."""
         queryset = self.request.user.subscriptions.all()
-        recipes_limit = request.query_params.get("recipes_limit", None)
+        recipes_limit = self._get_recipes_limit(request)
 
-        if recipes_limit is not None:
-            try:
-                recipes_limit = int(recipes_limit)
-                if recipes_limit < 1:
-                    return Response(
-                        {
-                            "error": (
-                                "recipes_limit должно быть"
-                                "положительным числом."
-                            )
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-            except ValueError:
-                return Response(
-                    {"error": "Некорректное значение для recipes_limit"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            queryset = queryset[:recipes_limit]
-
-        serializer = SubscriptionSerializer(queryset, many=True)
-        return Response(
-            {"subscriptions": serializer.data}, status=status.HTTP_200_OK
+        context = (
+            {"recipes_limit": recipes_limit}
+            if recipes_limit is not None
+            else {}
         )
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = SubscriptionSerializer(
+                page, many=True, context=context
+            )
+            return self.get_paginated_response(serializer.data)
+
+        serializer = SubscriptionSerializer(
+            queryset, many=True, context=context
+        )
+        return Response(serializer.data)
 
 
 class RecipeViewSet(ModelViewSet):
