@@ -85,15 +85,21 @@ class CustomUserViewSet(UserViewSet):
     def avatar(self, request):
         """Обновляет аватар пользователя."""
         user = request.user
+        if 'avatar' not in request.data:
+            return Response(
+                {"error": "Аватар не добавлен."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         serializer = AvatarSerializer(user, data=request.data, partial=True)
 
         if not serializer.is_valid():
             raise ValidationError(serializer.errors)
 
         serializer.save()
-        return Response(
-            {"status": "Аватар обновлен"}, status=status.HTTP_200_OK
-        )
+        return Response({
+            "status": "Аватар обновлен",
+            "avatar": serializer.data.get("avatar")
+        }, status=status.HTTP_200_OK)
 
     @avatar.mapping.delete
     def delete_avatar(self, request):
