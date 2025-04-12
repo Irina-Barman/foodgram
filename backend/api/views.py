@@ -216,11 +216,9 @@ class RecipeViewSet(ModelViewSet):
         """Создает новый рецепт, проверяя авторизацию пользователя."""
         self.permission_classes = [IsAuthenticated]
         self.check_permissions(request)
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         recipe = self.perform_create(serializer)
-
         response_serializer = RecipeListSerializer(
             recipe, context={"request": request}
         )
@@ -236,7 +234,6 @@ class RecipeViewSet(ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-
         response_serializer = RecipeListSerializer(
             instance, context={"request": request}
         )
@@ -247,38 +244,26 @@ class RecipeViewSet(ModelViewSet):
     )
     def favorite(self, request, pk=None):
         """Добавляет рецепт в список избранного."""
-        recipe = get_object_or_404(Recipe, id=pk)
-        favorite_item, created = Favorites.objects.get_or_create(
-            user=request.user, recipe=recipe
-        )
-
-        if created:
-            return Response(
-                FavoritesSerializer(favorite_item).data,
-                status=status.HTTP_201_CREATED,
-            )
+        recipe = get_object_or_404(Recipe, pk=pk)
+        Favorites.objects.get_or_create(user=request.user, recipe=recipe)
         return Response(
-            {"detail": "Рецепт уже в избранном."},
-            status=status.HTTP_400_BAD_REQUEST,
+            {"detail": "Рецепт добавлен в избранное."},
+            status=status.HTTP_201_CREATED,
         )
 
     @favorite.mapping.delete
     def unfavorite(self, request, pk=None):
         """Удаляет рецепт из списка избранного."""
-        recipe = get_object_or_404(Recipe, id=pk)
-
+        recipe = get_object_or_404(Recipe, pk=pk)
         favorite_item = Favorites.objects.filter(
             user=request.user, recipe=recipe
         )
-
         if favorite_item.exists():
-            favorite_item_instance = favorite_item.first()
             favorite_item.delete()
             return Response(
-                FavoritesSerializer(favorite_item_instance).data,
+                {"detail": "Рецепт удален из избранного."},
                 status=status.HTTP_204_NO_CONTENT,
             )
-
         return Response(
             {"detail": "Рецепт не найден в избранном."},
             status=status.HTTP_404_NOT_FOUND,
