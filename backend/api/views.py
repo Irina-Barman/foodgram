@@ -16,6 +16,7 @@ from .permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
 from .serializers import (
     AvatarSerializer,
     CustomUserSerializer,
+    FavoritesSerializer,
     IngredientSerializer,
     RecipeListSerializer,
     RecipeWriteSerializer,
@@ -253,7 +254,7 @@ class RecipeViewSet(ModelViewSet):
 
         Favorites.objects.create(user=request.user, recipe=recipe)
 
-        response_serializer = RecipeListSerializer(
+        response_serializer = FavoritesSerializer(
             recipe, context={"request": request}
         )
 
