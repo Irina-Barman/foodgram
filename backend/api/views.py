@@ -16,7 +16,6 @@ from .permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
 from .serializers import (
     AvatarSerializer,
     CustomUserSerializer,
-    FavoritesSerializer,
     IngredientSerializer,
     RecipeListSerializer,
     RecipeWriteSerializer,
@@ -248,7 +247,9 @@ class RecipeViewSet(ModelViewSet):
     def favorite(self, request, id=None):
         """Добавляет рецепт в список избранного."""
         recipe = get_object_or_404(Recipe, id=id)
+
         Favorites.objects.get_or_create(user=request.user, recipe=recipe)
+
         return Response(
             {"detail": "Рецепт добавлен в избранное."},
             status=status.HTTP_201_CREATED,
@@ -258,6 +259,7 @@ class RecipeViewSet(ModelViewSet):
     def unfavorite(self, request, id=None):
         """Удаляет рецепт из списка избранного."""
         recipe = get_object_or_404(Recipe, id=id)
+
         favorite_item = Favorites.objects.filter(
             user=request.user, recipe=recipe
         )
