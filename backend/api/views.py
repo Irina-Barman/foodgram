@@ -189,7 +189,9 @@ class CustomUserViewSet(UserViewSet):
             queryset = queryset[:recipes_limit]
 
         serializer = SubscriptionSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            {"subscriptions": serializer.data}, status=status.HTTP_200_OK
+        )
 
 
 class RecipeViewSet(ModelViewSet):
