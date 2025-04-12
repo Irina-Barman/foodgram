@@ -80,11 +80,11 @@ class CustomUserViewSet(UserViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
-        methods=['put'],
+        methods=["put"],
         detail=False,
         permission_classes=[IsAuthenticated],
-        url_path='me/avatar',
-        url_name='me-avatar',
+        url_path="me/avatar",
+        url_name="me-avatar",
     )
     def avatar(self, request):
         """Добавление или удаление аватара"""
@@ -94,8 +94,8 @@ class CustomUserViewSet(UserViewSet):
     @avatar.mapping.delete
     def delete_avatar(self, request):
         data = request.data
-        if 'avatar' not in data:
-            data = {'avatar': None}
+        if "avatar" not in data:
+            data = {"avatar": None}
         self._change_avatar(data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -105,9 +105,9 @@ class CustomUserViewSet(UserViewSet):
         url_path="subscribe",
         permission_classes=[IsAuthenticated],
     )
-    def subscribe(self, request, pk=None):
+    def subscribe(self, request, id=None):
         """Создает подписку на автора."""
-        author = get_object_or_404(User, id=pk)
+        author = get_object_or_404(User, id=id)
 
         if request.user.id == author.id:
             return Response(
@@ -144,9 +144,9 @@ class CustomUserViewSet(UserViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @subscribe.mapping.delete
-    def unsubscribe(self, request, pk=None):
+    def unsubscribe(self, request, id=None):
         """Удаляет подписку на автора."""
-        author = get_object_or_404(User, id=pk)
+        author = get_object_or_404(User, id=id)
 
         deleted, _ = Subscription.objects.filter(
             user=request.user, author=author
