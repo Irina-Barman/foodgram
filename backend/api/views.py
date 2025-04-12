@@ -238,15 +238,25 @@ class RecipeViewSet(ModelViewSet):
         )
         return Response(response_serializer.data)
 
-    @action(
-        detail=True, methods=["post"], permission_classes=[IsAuthenticated]
-    )
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def favorite(self, request, pk=None):
         """Добавляет рецепт в список избранного."""
         recipe = get_object_or_404(Recipe, pk=pk)
-        Favorites.objects.get_or_create(user=request.user, recipe=recipe)
+
+        if Favorites.objects.filter(user=request.user, recipe=recipe).exists():
+            return Response(
+                {"detail": "Этот рецепт уже в вашем избранном."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        Favorites.objects.create(user=request.user, recipe=recipe)
+
+        response_serializer = RecipeListSerializer(
+            recipe, context={"request": request}
+        )
+
         return Response(
-            {"detail": "Рецепт добавлен в избранное."},
+            response_serializer.data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -265,7 +275,7 @@ class RecipeViewSet(ModelViewSet):
             )
         return Response(
             {"detail": "Рецепт не найден в избранном."},
-            status=status.HTTP_404_NOT_FOUND,
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
     @action(
