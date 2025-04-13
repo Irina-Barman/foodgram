@@ -10,6 +10,7 @@ from api.constants import (
     MAX_RECIPES_NAME_LENGTH,
     MAX_TAG_LENGTH,
     MAX_TAG_SLUG_LENGTH,
+    MAX_TIME,
     MAX_UNIT_LENGTH,
     MAX_VALUE,
     MIN_TIME,
@@ -107,6 +108,12 @@ class Recipe(models.Model):
                 MIN_TIME,
                 message=(
                     f"Время приготовления не может быть меньше {MIN_TIME}",
+                ),
+            ),
+            MaxValueValidator(
+                MAX_TIME,
+                message=(
+                    f"Время приготовления не может быть больше {MAX_TIME}",
                 ),
             ),
         ],
