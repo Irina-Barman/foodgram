@@ -217,6 +217,10 @@ class RecipeViewSet(ModelViewSet):
         """Сохраняет рецепт с автором текущего пользователя."""
         return serializer.save(author=self.request.user)
 
+    def perform_update(self, serializer):
+        """Обновляет рецепт."""
+        serializer.save()
+
     @action(
         detail=True, methods=["post"])
     def favorite(self, request, pk=None):
