@@ -254,7 +254,7 @@ class RecipeWriteSerializer(ModelSerializer):
 
     def to_representation(self, instance):
         # Используем сериализатор для получения рецепта
-        return RecipeListSerializer(instance).data
+        return RecipeListSerializer(instance, context=self.context).data
 
     def add_tags_ingredients(self, ingredients, tags, model):
         recipe_ingredients = [
