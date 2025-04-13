@@ -208,40 +208,17 @@ class RecipeViewSet(ModelViewSet):
             return RecipeListSerializer
         return RecipeWriteSerializer
 
+    def get_permission_classes(self):
+        if self.request.method in ["POST", "PUT", "PATCH", "DELETE"]:
+            return [IsAuthenticated]
+        return super().get_permission_classes()
+
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
         return serializer.save(author=self.request.user)
 
-    def create(self, request, *args, **kwargs):
-        """Создает новый рецепт, проверяя авторизацию пользователя."""
-        self.permission_classes = [IsAuthenticated]
-        self.check_permissions(request)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        recipe = self.perform_create(serializer)
-        response_serializer = RecipeListSerializer(
-            recipe, context={"request": request}
-        )
-        return Response(
-            response_serializer.data, status=status.HTTP_201_CREATED
-        )
-
-    def update(self, request, *args, **kwargs):
-        """Обновляет существующий рецепт."""
-        instance = self.get_object()
-        serializer = self.get_serializer(
-            instance, data=request.data, partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        response_serializer = RecipeListSerializer(
-            instance, context={"request": request}
-        )
-        return Response(response_serializer.data)
-
     @action(
-        detail=True, methods=["post"], permission_classes=[IsAuthenticated]
-    )
+        detail=True, methods=["post"])
     def favorite(self, request, pk=None):
         """Добавляет рецепт в список избранного."""
         recipe = get_object_or_404(Recipe, pk=pk)
@@ -279,8 +256,7 @@ class RecipeViewSet(ModelViewSet):
         )
 
     @action(
-        detail=True, methods=["post"], permission_classes=[IsAuthenticated]
-    )
+        detail=True, methods=["post"])
     def shopping_cart(self, request, pk=None):
         """Добавляет рецепт в список покупок."""
         recipe = get_object_or_404(Recipe, pk=pk)
