@@ -207,16 +207,11 @@ class RecipeViewSet(ModelViewSet):
             return RecipeListSerializer
         return RecipeWriteSerializer
 
-    def get_permission_classes(self):
-        if self.request.method in ["POST", "PUT", "PATCH", "DELETE"]:
-            return [IsAuthenticated]
-        return super().get_permission_classes()
-
     def get_permissions(self):
         if self.request.method in ["PUT", "PATCH", "DELETE"]:
             return [IsOwnerOrReadOnly()]
         elif self.request.method in ["POST", "GET"]:
-            return [IsOwnerOrReadOnly()]
+            return [IsAuthenticated()]
         return super().get_permissions()
 
     def perform_create(self, serializer):
@@ -304,8 +299,7 @@ class RecipeViewSet(ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
-        detail=False, methods=["get"], permission_classes=[IsAuthenticated]
-    )
+        detail=False, methods=["get"])
     def download_shopping_cart(self, request):
         """Генерирует PDF для корзины покупок."""
         shopping_cart_items = (
