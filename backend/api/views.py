@@ -233,6 +233,8 @@ class RecipeViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
+        if not self.request.user.is_authenticated:
+            raise AuthenticationFailed("Пользователь не аутентифицирован.")
         recipe = serializer.save(author=self.request.user)
         return recipe
 
