@@ -297,22 +297,24 @@ class RecipeViewSet(ModelViewSet):
     @shopping_cart.mapping.delete
     def remove_from_shopping_cart(self, request, pk=None):
         """Удаляет рецепт из списка покупок."""
-        self.check_object_permissions(
-            request, get_object_or_404(Recipe, pk=pk)
-        )  # Проверка прав доступа
-        recipe = get_object_or_404(Recipe, pk=pk)
 
+        # Проверка аутентификации
         if not request.user.is_authenticated:
             return Response(
                 {"detail": "Необходима аутентификация."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        deleted_count = ShoppingCart.objects.filter(
+        # Получение рецепта и проверка прав доступа
+        recipe = get_object_or_404(Recipe, pk=pk)
+        self.check_object_permissions(request, recipe)
+
+        # Удаление рецепта из списка покупок
+        deleted_count, _ = ShoppingCart.objects.filter(
             user=request.user, recipe=recipe
         ).delete()
 
-        if deleted_count[0] == 0:
+        if deleted_count == 0:
             return Response(
                 {"detail": "Рецепт не найден в списке покупок."},
                 status=status.HTTP_400_BAD_REQUEST,
