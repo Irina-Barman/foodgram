@@ -13,6 +13,7 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from .filters import IngredientSearchFilter, RecipeFilter
 from .pagination import LimitPagePagination
 from .permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
+from .recipe_handler import RecipeHandler
 from .serializers import (
     AvatarSerializer,
     CustomUserSerializer,
@@ -228,99 +229,48 @@ class RecipeViewSet(ModelViewSet):
     @action(detail=True, methods=["post"])
     def favorite(self, request, pk=None):
         """Добавляет рецепт в список избранного."""
-        recipe = get_object_or_404(Recipe, pk=pk)
+        auth_response = RecipeHandler.__check_authentication(request)
+        if auth_response:
+            return auth_response
 
-        if Favorites.objects.filter(user=request.user, recipe=recipe).exists():
-            return Response(
-                {"detail": "Этот рецепт уже в вашем избранном."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        Favorites.objects.create(user=request.user, recipe=recipe)
-        response_serializer = FavoritesSerializer(
-            recipe, context={"request": request}
-        )
-        return Response(
-            response_serializer.data,
-            status=status.HTTP_201_CREATED,
-        )
+        recipe = RecipeHandler.__get_recipe(pk)
+        return RecipeHandler.__add_recipe(FavoritesSerializer, request, recipe)
 
     @favorite.mapping.delete
     def unfavorite(self, request, pk=None):
         """Удаляет рецепт из списка избранного."""
-        # Проверка на авторизацию, требование тз
-        if not request.user.is_authenticated:
-            return Response(
-                {"detail": "Необходима аутентификация."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+        auth_response = RecipeHandler.__check_authentication(request)
+        if auth_response:
+            return auth_response
 
-        recipe = get_object_or_404(Recipe, pk=pk)
-        favorite_item = Favorites.objects.filter(
-            user=request.user, recipe=recipe
-        )
-
-        if favorite_item.exists():
-            favorite_item.delete()
-            return Response(
-                {"detail": "Рецепт удален из избранного."},
-                status=status.HTTP_204_NO_CONTENT,
-            )
-
-        return Response(
-            {"detail": "Рецепт не найден в избранном."},
-            status=status.HTTP_400_BAD_REQUEST,
+        recipe = RecipeHandler.__get_recipe(pk)
+        return RecipeHandler.__delete_recipe(
+            Favorites, request, "Рецепт не найден в избранном.", recipe
         )
 
     @action(detail=True, methods=["post"])
     def shopping_cart(self, request, pk=None):
         """Добавляет рецепт в список покупок."""
-        recipe = get_object_or_404(Recipe, pk=pk)
+        auth_response = RecipeHandler.__check_authentication(request)
+        if auth_response:
+            return auth_response
 
-        if ShoppingCart.objects.filter(
-            user=request.user, recipe=recipe
-        ).exists():
-            return Response(
-                {"detail": "Рецепт уже в списке покупок."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        ShoppingCart.objects.create(user=request.user, recipe=recipe)
-
-        response_serializer = ShoppingCartSerializer(recipe)
-
-        return Response(
-            response_serializer.data, status=status.HTTP_201_CREATED
+        recipe = RecipeHandler.__get_recipe(pk)
+        return RecipeHandler.__add_recipe(
+            ShoppingCartSerializer, request, recipe
         )
 
     @shopping_cart.mapping.delete
     def remove_from_shopping_cart(self, request, pk=None):
         """Удаляет рецепт из списка покупок."""
-        # Проверка на авторизацию, требование ТЗ
-        if not request.user.is_authenticated:
-            return Response(
-                {"detail": "Необходима аутентификация."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+        auth_response = RecipeHandler.__check_authentication(request)
+        if auth_response:
+            return auth_response
 
-        # Проверка прав доступа к объекту
-        self.check_object_permissions(
-            request, get_object_or_404(Recipe, pk=pk)
+        recipe = RecipeHandler.__get_recipe(pk)
+        return RecipeHandler.__delete_recipe(
+            ShoppingCart, request, "Рецепт не найден в списке покупок.", recipe
         )
-
-        recipe = get_object_or_404(Recipe, pk=pk)
-
-        # Удаление рецепта из списка покупок
-        deleted_count, _ = ShoppingCart.objects.filter(
-            user=request.user, recipe=recipe
-        ).delete()
-
-        if deleted_count == 0:
-            return Response(
-                {"detail": "Рецепт не найден в списке покупок."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["get"])
     def download_shopping_cart(self, request):
