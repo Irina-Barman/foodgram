@@ -208,9 +208,9 @@ class RecipeViewSet(ModelViewSet):
         return RecipeWriteSerializer
 
     def get_permissions(self):
-        if self.request.method in ["PUT", "PATCH", "DELETE"]:
+        if self.request.method in ["PUT", "PATCH"]:
             return [IsOwnerOrReadOnly()]
-        elif self.request.method in ["POST"]:
+        elif self.request.method in ["POST", "DELETE"]:
             return [IsAuthenticated()]
         elif self.request.method in ["GET"]:
             return [AllowAny()]
@@ -248,8 +248,7 @@ class RecipeViewSet(ModelViewSet):
     def unfavorite(self, request, pk=None):
         """Удаляет рецепт из списка избранного."""
         self.check_object_permissions(
-            request, get_object_or_404(Recipe, pk=pk)
-        )  # Проверка прав доступа
+            request, get_object_or_404(Recipe, pk=pk))
         recipe = get_object_or_404(Recipe, pk=pk)
 
         if not request.user.is_authenticated:
