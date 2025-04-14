@@ -3,15 +3,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import filters, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import (
-    AuthenticationFailed,
-    PermissionDenied,
-    ValidationError,
-)
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView, exception_handler
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from .filters import IngredientSearchFilter, RecipeFilter
@@ -213,28 +209,19 @@ class RecipeViewSet(ModelViewSet):
         return RecipeWriteSerializer
 
     def get_permission_classes(self):
+        if self.action in [
+            "favorite",
+            "unfavorite",
+            "shopping_cart",
+            "remove_from_shopping_cart",
+        ]:
+            return [IsAuthenticated]
         if self.request.method in ["POST", "PUT", "PATCH", "DELETE"]:
             return [IsAuthenticated]
         return super().get_permission_classes()
 
-    def handle_exception(self, exc):
-        response = exception_handler(exc, self.request)
-
-        # Если ответ не был сгенерирован (например, для аутентификации)
-        if response is None:
-            # Проверка на тип исключения
-            if isinstance(exc, AuthenticationFailed):
-                return Response(
-                    {"detail": "Пользователь не аутентифицирован."},
-                    status=status.HTTP_401_UNAUTHORIZED,
-                )
-
-        return response
-
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
-        if not self.request.user.is_authenticated:
-            raise AuthenticationFailed("Пользователь не аутентифицирован.")
         recipe = serializer.save(author=self.request.user)
         return recipe
 
