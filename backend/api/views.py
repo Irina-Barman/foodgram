@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import filters, status
@@ -19,6 +20,7 @@ from .serializers import (
     CustomUserSerializer,
     FavoritesSerializer,
     IngredientSerializer,
+    RecipeIngredient,
     RecipeListSerializer,
     RecipeWriteSerializer,
     ShoppingCartSerializer,
@@ -265,29 +267,21 @@ class RecipeViewSet(ModelViewSet):
     @action(detail=False, methods=["get"])
     def download_shopping_cart(self, request):
         """Генерирует PDF для корзины покупок."""
-        shopping_cart_items = (
-            ShoppingCart.objects.filter(user=request.user)
-            .select_related("recipe")
-            .prefetch_related("recipe__recipe_ingredients__ingredient")
+        ingredients = (
+            RecipeIngredient.objects.filter(
+                recipe__shopping_cart__user=request.user
+            )
+            .values("ingredient__name", "ingredient__measurement_unit")
+            .annotate(total_amount=Sum("amount"))
         )
 
-        ingredients = {}
-        for cart_item in shopping_cart_items:
-            for recipe_ingredient in cart_item.recipe.recipe_ingredients.all():
-                ingredient_name = recipe_ingredient.ingredient.name
-                ingredient_amount = recipe_ingredient.amount
-                ingredient_unit = recipe_ingredient.ingredient.measurement_unit
-
-                if ingredient_name in ingredients:
-                    ingredients[ingredient_name]["amount"] += ingredient_amount
-                else:
-                    ingredients[ingredient_name] = {
-                        "amount": ingredient_amount,
-                        "unit": ingredient_unit,
-                    }
         ingredient_list = [
-            {"name": name, "amount": data["amount"], "unit": data["unit"]}
-            for name, data in ingredients.items()
+            {
+                "name": ingredient["ingredient__name"],
+                "amount": ingredient["total_amount"],
+                "unit": ingredient["ingredient__measurement_unit"],
+            }
+            for ingredient in ingredients
         ]
 
         return generate_pdf(ingredient_list)
