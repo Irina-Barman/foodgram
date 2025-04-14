@@ -210,9 +210,10 @@ class RecipeViewSet(ModelViewSet):
     def get_permissions(self):
         if self.request.method in ["PUT", "PATCH", "DELETE"]:
             return [IsOwnerOrReadOnly()]
-        elif self.request.method in ["POST", "GET"]:
+        elif self.request.method in ["POST"]:
             return [IsAuthenticated()]
-        return super().get_permissions()
+        elif self.request.method in ["GET"]:
+            return [AllowAny()]
 
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
