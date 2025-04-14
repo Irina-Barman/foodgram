@@ -201,7 +201,6 @@ class RecipeViewSet(ModelViewSet):
     pagination_class = LimitPagePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = RecipeFilter
-    permission_classes = [IsOwnerOrReadOnly]
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -209,16 +208,16 @@ class RecipeViewSet(ModelViewSet):
         return RecipeWriteSerializer
 
     def get_permission_classes(self):
-        if self.action in [
-            "favorite",
-            "unfavorite",
-            "shopping_cart",
-            "remove_from_shopping_cart",
-        ]:
-            return [IsAuthenticated]
         if self.request.method in ["POST", "PUT", "PATCH", "DELETE"]:
             return [IsAuthenticated]
         return super().get_permission_classes()
+
+    def get_permissions(self):
+        if self.request.method in ["PUT", "PATCH", "DELETE"]:
+            return [IsOwnerOrReadOnly()]
+        elif self.request.method in ["POST", "GET"]:
+            return [IsOwnerOrReadOnly()]
+        return super().get_permissions()
 
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
