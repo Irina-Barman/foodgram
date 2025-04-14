@@ -247,7 +247,7 @@ class RecipeViewSet(ModelViewSet):
     @favorite.mapping.delete
     def unfavorite(self, request, pk=None):
         """Удаляет рецепт из списка избранного."""
-        # Проверка на авторизацию
+        # Проверка на авторизацию, требование тз
         if not request.user.is_authenticated:
             return Response(
                 {"detail": "Необходима аутентификация."},
@@ -295,10 +295,18 @@ class RecipeViewSet(ModelViewSet):
     @shopping_cart.mapping.delete
     def remove_from_shopping_cart(self, request, pk=None):
         """Удаляет рецепт из списка покупок."""
+        # Проверка на авторизацию, требование ТЗ
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Необходима аутентификация."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
+        # Проверка прав доступа к объекту
         self.check_object_permissions(
             request, get_object_or_404(Recipe, pk=pk)
         )
+
         recipe = get_object_or_404(Recipe, pk=pk)
 
         # Удаление рецепта из списка покупок
