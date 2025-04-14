@@ -228,6 +228,13 @@ class RecipeViewSet(ModelViewSet):
     @action(detail=True, methods=["post"])
     def favorite(self, request, pk=None):
         """Добавляет рецепт в список избранного."""
+        # Проверка на авторизацию
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Необходима аутентификация."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
         recipe = get_object_or_404(Recipe, pk=pk)
 
         if Favorites.objects.filter(user=request.user, recipe=recipe).exists():
@@ -235,6 +242,7 @@ class RecipeViewSet(ModelViewSet):
                 {"detail": "Этот рецепт уже в вашем избранном."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
         Favorites.objects.create(user=request.user, recipe=recipe)
         response_serializer = FavoritesSerializer(
             recipe, context={"request": request}
@@ -247,15 +255,15 @@ class RecipeViewSet(ModelViewSet):
     @favorite.mapping.delete
     def unfavorite(self, request, pk=None):
         """Удаляет рецепт из списка избранного."""
-        self.check_object_permissions(
-            request, get_object_or_404(Recipe, pk=pk))
-        recipe = get_object_or_404(Recipe, pk=pk)
-
+        # Проверка на авторизацию
         if not request.user.is_authenticated:
             return Response(
                 {"detail": "Необходима аутентификация."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
+
+        recipe = get_object_or_404(Recipe, pk=pk)
+        self.check_object_permissions(request, recipe)  # Проверка прав доступа
 
         favorite_item = Favorites.objects.filter(
             user=request.user, recipe=recipe
