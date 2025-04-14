@@ -298,16 +298,10 @@ class RecipeViewSet(ModelViewSet):
     def remove_from_shopping_cart(self, request, pk=None):
         """Удаляет рецепт из списка покупок."""
 
-        # Проверка аутентификации
-        if not request.user.is_authenticated:
-            return Response(
-                {"detail": "Необходима аутентификация."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        # Получение рецепта и проверка прав доступа
+        self.check_object_permissions(
+            request, get_object_or_404(Recipe, pk=pk)
+        )
         recipe = get_object_or_404(Recipe, pk=pk)
-        self.check_object_permissions(request, recipe)
 
         # Удаление рецепта из списка покупок
         deleted_count, _ = ShoppingCart.objects.filter(
