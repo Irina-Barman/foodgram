@@ -13,7 +13,7 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from .filters import IngredientSearchFilter, RecipeFilter
 from .pagination import LimitPagePagination
 from .permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
-from .recipe_handler import RecipeHandler
+from .recipe_actions import RecipeActions
 from .serializers import (
     AvatarSerializer,
     CustomUserSerializer,
@@ -229,47 +229,37 @@ class RecipeViewSet(ModelViewSet):
     @action(detail=True, methods=["post"])
     def favorite(self, request, pk=None):
         """Добавляет рецепт в список избранного."""
-        auth_response = RecipeHandler._check_authentication(request)
-        if auth_response:
-            return auth_response
-
-        recipe = RecipeHandler._get_recipe(pk)
-        return RecipeHandler._add_recipe(FavoritesSerializer, request, recipe)
+        return RecipeActions.add_to_list(
+            request,
+            pk,
+            Favorites,
+            FavoritesSerializer,
+            "Этот рецепт уже в списке избранного.",
+        )
 
     @favorite.mapping.delete
     def unfavorite(self, request, pk=None):
         """Удаляет рецепт из списка избранного."""
-        auth_response = RecipeHandler._check_authentication(request)
-        if auth_response:
-            return auth_response
-
-        recipe = RecipeHandler._get_recipe(pk)
-        return RecipeHandler._delete_recipe(
-            Favorites, request, "Рецепт не найден в избранном.", recipe
+        return RecipeActions.remove_from_list(
+            request, pk, Favorites, "Рецепт не найден в избранном."
         )
 
     @action(detail=True, methods=["post"])
     def shopping_cart(self, request, pk=None):
         """Добавляет рецепт в список покупок."""
-        auth_response = RecipeHandler._check_authentication(request)
-        if auth_response:
-            return auth_response
-
-        recipe = RecipeHandler._get_recipe(pk)
-        return RecipeHandler._add_recipe(
-            ShoppingCartSerializer, request, recipe
+        return RecipeActions.add_to_list(
+            request,
+            pk,
+            ShoppingCart,
+            ShoppingCartSerializer,
+            "Рецепт уже в списке покупок.",
         )
 
     @shopping_cart.mapping.delete
     def remove_from_shopping_cart(self, request, pk=None):
         """Удаляет рецепт из списка покупок."""
-        auth_response = RecipeHandler._check_authentication(request)
-        if auth_response:
-            return auth_response
-
-        recipe = RecipeHandler._get_recipe(pk)
-        return RecipeHandler._delete_recipe(
-            ShoppingCart, request, "Рецепт не найден в списке покупок.", recipe
+        return RecipeActions.remove_from_list(
+            request, pk, ShoppingCart, "Рецепт не найден в списке покупок."
         )
 
     @action(detail=False, methods=["get"])
