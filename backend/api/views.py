@@ -3,11 +3,15 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import filters, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import (
+    AuthenticationFailed,
+    PermissionDenied,
+    ValidationError,
+)
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.views import APIView, exception_handler
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from .filters import IngredientSearchFilter, RecipeFilter
@@ -213,6 +217,20 @@ class RecipeViewSet(ModelViewSet):
             return [IsAuthenticated]
         return super().get_permission_classes()
 
+    def handle_exception(self, exc):
+        response = exception_handler(exc, self.request)
+
+        # Если ответ не был сгенерирован (например, для аутентификации)
+        if response is None:
+            # Проверка на тип исключения
+            if isinstance(exc, AuthenticationFailed):
+                return Response(
+                    {"detail": "Пользователь не аутентифицирован."},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+
+        return response
+
     def perform_create(self, serializer):
         """Сохраняет рецепт с автором текущего пользователя."""
         recipe = serializer.save(author=self.request.user)
@@ -222,8 +240,7 @@ class RecipeViewSet(ModelViewSet):
         """Обновляет рецепт."""
         serializer.save()
 
-    @action(
-        detail=True, methods=["post"])
+    @action(detail=True, methods=["post"])
     def favorite(self, request, pk=None):
         """Добавляет рецепт в список избранного."""
         recipe = get_object_or_404(Recipe, pk=pk)
@@ -260,8 +277,7 @@ class RecipeViewSet(ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    @action(
-        detail=True, methods=["post"])
+    @action(detail=True, methods=["post"])
     def shopping_cart(self, request, pk=None):
         """Добавляет рецепт в список покупок."""
         recipe = get_object_or_404(Recipe, pk=pk)
