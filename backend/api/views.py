@@ -247,7 +247,17 @@ class RecipeViewSet(ModelViewSet):
     @favorite.mapping.delete
     def unfavorite(self, request, pk=None):
         """Удаляет рецепт из списка избранного."""
+        self.check_object_permissions(
+            request, get_object_or_404(Recipe, pk=pk)
+        )  # Проверка прав доступа
         recipe = get_object_or_404(Recipe, pk=pk)
+
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Необходима аутентификация."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
         favorite_item = Favorites.objects.filter(
             user=request.user, recipe=recipe
         )
@@ -257,6 +267,7 @@ class RecipeViewSet(ModelViewSet):
                 {"detail": "Рецепт удален из избранного."},
                 status=status.HTTP_204_NO_CONTENT,
             )
+
         return Response(
             {"detail": "Рецепт не найден в избранном."},
             status=status.HTTP_400_BAD_REQUEST,
@@ -286,7 +297,16 @@ class RecipeViewSet(ModelViewSet):
     @shopping_cart.mapping.delete
     def remove_from_shopping_cart(self, request, pk=None):
         """Удаляет рецепт из списка покупок."""
+        self.check_object_permissions(
+            request, get_object_or_404(Recipe, pk=pk)
+        )  # Проверка прав доступа
         recipe = get_object_or_404(Recipe, pk=pk)
+
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Необходима аутентификация."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         deleted_count = ShoppingCart.objects.filter(
             user=request.user, recipe=recipe
@@ -300,8 +320,7 @@ class RecipeViewSet(ModelViewSet):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(
-        detail=False, methods=["get"])
+    @action(detail=False, methods=["get"])
     def download_shopping_cart(self, request):
         """Генерирует PDF для корзины покупок."""
         shopping_cart_items = (
