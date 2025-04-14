@@ -8,7 +8,7 @@ from recipes.models import Recipe
 class RecipeHandler:
 
     @staticmethod
-    def __add_recipe(serializer_name, request, recipe):
+    def _add_recipe(serializer_name, request, recipe):
         """Добавить рецепт."""
         serializer = serializer_name(
             data={"user": request.user.id, "recipe": recipe.id},
@@ -19,7 +19,7 @@ class RecipeHandler:
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @staticmethod
-    def __delete_recipe(model, request, err_msg, recipe):
+    def _delete_recipe(model, request, err_msg, recipe):
         """Удалить рецепт."""
         obj = model.objects.filter(user=request.user, recipe=recipe)
         if obj.exists():
@@ -27,7 +27,7 @@ class RecipeHandler:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response({"error": err_msg}, status=status.HTTP_400_BAD_REQUEST)
 
-    def __check_authentication(self, request):
+    def _check_authentication(self, request):
         """Проверка аутентификации пользователя."""
         if not request.user.is_authenticated:
             return Response(
@@ -36,6 +36,6 @@ class RecipeHandler:
             )
         return None
 
-    def __get_recipe(self, pk):
+    def _get_recipe(self, pk):
         """Получить рецепт по первичному ключу."""
         return get_object_or_404(Recipe, pk=pk)

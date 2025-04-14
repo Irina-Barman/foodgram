@@ -229,46 +229,46 @@ class RecipeViewSet(ModelViewSet):
     @action(detail=True, methods=["post"])
     def favorite(self, request, pk=None):
         """Добавляет рецепт в список избранного."""
-        auth_response = RecipeHandler.__check_authentication(request)
+        auth_response = RecipeHandler._check_authentication(request)
         if auth_response:
             return auth_response
 
-        recipe = RecipeHandler.__get_recipe(pk)
-        return RecipeHandler.__add_recipe(FavoritesSerializer, request, recipe)
+        recipe = RecipeHandler._get_recipe(pk)
+        return RecipeHandler._add_recipe(FavoritesSerializer, request, recipe)
 
     @favorite.mapping.delete
     def unfavorite(self, request, pk=None):
         """Удаляет рецепт из списка избранного."""
-        auth_response = RecipeHandler.__check_authentication(request)
+        auth_response = RecipeHandler._check_authentication(request)
         if auth_response:
             return auth_response
 
-        recipe = RecipeHandler.__get_recipe(pk)
-        return RecipeHandler.__delete_recipe(
+        recipe = RecipeHandler._get_recipe(pk)
+        return RecipeHandler._delete_recipe(
             Favorites, request, "Рецепт не найден в избранном.", recipe
         )
 
     @action(detail=True, methods=["post"])
     def shopping_cart(self, request, pk=None):
         """Добавляет рецепт в список покупок."""
-        auth_response = RecipeHandler.__check_authentication(request)
+        auth_response = RecipeHandler._check_authentication(request)
         if auth_response:
             return auth_response
 
-        recipe = RecipeHandler.__get_recipe(pk)
-        return RecipeHandler.__add_recipe(
+        recipe = RecipeHandler._get_recipe(pk)
+        return RecipeHandler._add_recipe(
             ShoppingCartSerializer, request, recipe
         )
 
     @shopping_cart.mapping.delete
     def remove_from_shopping_cart(self, request, pk=None):
         """Удаляет рецепт из списка покупок."""
-        auth_response = RecipeHandler.__check_authentication(request)
+        auth_response = RecipeHandler._check_authentication(request)
         if auth_response:
             return auth_response
 
-        recipe = RecipeHandler.__get_recipe(pk)
-        return RecipeHandler.__delete_recipe(
+        recipe = RecipeHandler._get_recipe(pk)
+        return RecipeHandler._delete_recipe(
             ShoppingCart, request, "Рецепт не найден в списке покупок.", recipe
         )
 
