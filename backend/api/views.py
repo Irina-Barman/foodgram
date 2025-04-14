@@ -208,9 +208,9 @@ class RecipeViewSet(ModelViewSet):
         return RecipeWriteSerializer
 
     def get_permissions(self):
-        if self.request.method in ["PUT", "PATCH"]:
+        if self.request.method in ["PUT", "PATCH", "DELETE"]:
             return [IsOwnerOrReadOnly()]
-        elif self.request.method in ["POST", "DELETE"]:
+        elif self.request.method in ["POST"]:
             return [IsAuthenticated()]
         elif self.request.method in ["GET"]:
             return [AllowAny()]
